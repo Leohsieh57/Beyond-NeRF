@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <opencv2/highgui/highgui.hpp>
 
 #include "kitti_to_rosbag/kitti_parser.h"
+#include <opencv2/imgcodecs.hpp>
 
 namespace kitti {
 
@@ -494,7 +495,7 @@ bool KittiParser::getImageAtEntry(uint64_t entry, uint64_t cam_id,
                          "/" + kDataFolder + "/" + getFilenameForEntry(entry) +
                          ".png";
 
-  *image = cv::imread(filename, CV_LOAD_IMAGE_UNCHANGED);
+  *image = cv::imread(filename, cv::IMREAD_UNCHANGED);
 
   if (!image->data) {
     std::cout << "Could not load image data.\n";
