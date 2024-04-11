@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   eigen_conversions
   minkindr
+  cv_bridge
 )
 
 find_package(OpenCV REQUIRED COMPONENTS core highgui imgcodecs)
@@ -37,6 +38,17 @@ add_library(${PROJECT_NAME}
   src/kitti_parser.cpp
   src/kitti_ros_conversions.cpp
   src/kitti_common.cpp
+)
+
+add_dependencies(
+  ${PROJECT_NAME} 
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 
 ############
