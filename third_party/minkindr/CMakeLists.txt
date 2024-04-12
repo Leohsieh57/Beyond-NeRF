@@ -3,6 +3,8 @@ project(minkindr)
 
 # find_package(catkin_simple REQUIRED)
 # catkin_simple(ALL_DEPS_REQUIRED)
+set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
 
 find_package(Eigen3 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS

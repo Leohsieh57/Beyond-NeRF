@@ -9,9 +9,9 @@ add_definitions(-std=c++14)
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-find_package(Glog REQUIRED)
-find_package(gflags REQUIRED)
+# list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+# find_package(Glog REQUIRED)
+# find_package(gflags REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS 
   core
   highgui
@@ -28,6 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   tf
+  glog
 )
 
 include_directories(
@@ -42,6 +43,7 @@ catkin_package(
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
   minkindr
+  glog
 )
 
 #############
@@ -64,20 +66,6 @@ target_link_libraries(
   ${OpenCV_LIBS}
   ${GLOG_LIBRARY}
 )
-
-if (GFLAGS_USE_TARGET_NAMESPACE)
-  if (TARGET gflags::gflags)
-    target_link_libraries(${PROJECT_NAME} gflags::gflags)
-  else ()
-    message(FATAL_ERROR "gflags::gflags target not defined")
-  endif ()
-else ()
-  if (TARGET gflags)
-    target_link_libraries(${PROJECT_NAME} gflags)
-  else ()
-    message(FATAL_ERROR "gflags target not defined")
-  endif ()
-endif ()
 
 ############
 # BINARIES #
