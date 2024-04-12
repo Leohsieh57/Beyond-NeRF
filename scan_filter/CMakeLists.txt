@@ -37,3 +37,13 @@ target_link_libraries(
     ${PROJECT_NAME}
     ${catkin_LIBRARIES}
 )
+
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_NAME}
+    CATKIN_DEPENDS
+    glog_ros
+)
+
+add_executable(${PROJECT_NAME}_node main.cpp)
+target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME})
