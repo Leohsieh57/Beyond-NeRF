@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>glog</name>
+  <name>glog_ros</name>
   <version>0.0.0</version>
-  <description>A set of tools for parsing KITTI into ROS messages and outputting them as ROS bag files (or merged pointclouds).</description>
+  <description>glog_ros</description>
 
   <author email="helen.oleynikova@mavt.ethz.ch">Helen Oleynikova</author>
 

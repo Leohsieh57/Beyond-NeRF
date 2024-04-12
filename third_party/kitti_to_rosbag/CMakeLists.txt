@@ -9,9 +9,6 @@ add_definitions(-std=c++14)
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
 
-# list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-# find_package(Glog REQUIRED)
-# find_package(gflags REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS 
   core
   highgui
@@ -28,13 +25,12 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   tf
-  glog
+  glog_ros
 )
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-  ${Glog_INCLUDE_DIR}
   ${PROJECT_SOURCE_DIR}/include
 )
 
@@ -43,7 +39,7 @@ catkin_package(
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
   minkindr
-  glog
+  glog_ros
 )
 
 #############

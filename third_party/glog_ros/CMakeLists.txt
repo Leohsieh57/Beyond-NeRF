@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(glog)
+project(glog_ros)
 
 add_definitions(-std=c++14)
 set(CMAKE_BUILD_TYPE "Release")

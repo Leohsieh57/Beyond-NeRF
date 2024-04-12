@@ -1,4 +1,6 @@
 #include <scan_filter/scan_filter.h>
+#include <glog/logging.h>
+
 
 namespace beyond_nerf
 {
@@ -7,6 +9,7 @@ namespace beyond_nerf
     {
         // nh.param<std::string>("default_param", default_param, "default_value");
         // filter_.setLeafSize();
+        LOG(INFO) << "aloha" << std::endl;
     }
 
 

@@ -19,6 +19,10 @@
   <exec_depend>sensor_msgs</exec_depend>
   <build_export_depend>sensor_msgs</build_export_depend>
 
+  <build_depend>glog_ros</build_depend>
+  <exec_depend>glog_ros</exec_depend>
+  <build_export_depend>glog_ros</build_export_depend>
+
   <export>
     <!-- Other tools can request additional information be placed here -->
 

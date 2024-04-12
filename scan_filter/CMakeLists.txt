@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     pcl_ros
     sensor_msgs
+    glog_ros
 )
 
 include_directories(

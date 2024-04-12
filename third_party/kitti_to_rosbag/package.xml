@@ -23,5 +23,5 @@
   <depend>sensor_msgs</depend>
   <depend>tf</depend>
   <depend>rosbag</depend>
-  <depend>glog</depend>
+  <depend>glog_ros</depend>
 </package>
