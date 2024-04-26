@@ -11,6 +11,7 @@ from std_msgs.msg import Header
 
 import glob
 from datetime import datetime
+import cv2
 
 
 class OfflineDUSt3RServer:
@@ -48,8 +49,14 @@ class OfflineDUSt3RServer:
             self.pubs[frame_id] = pub
 
 
-    def publish_pointcloud(self, frame_id, views):
+    def publish_pointcloud(self, frame_id, views, ids):
+        imgs = [self.data[frame_id]['imgs'][i] for i in ids]
+
+        imgs = [cv2.imread(img).reshape((-1, 3)) for img in imgs]
+        imgs = [img.astype(np.float32) / 255 for img in imgs]
         views = [np.load(view).reshape((-1, 4)) for view in views]
+
+        points = [np.hstack(x) for x in zip(views, imgs)]
 
         header = Header()
         header.frame_id = frame_id
@@ -58,8 +65,12 @@ class OfflineDUSt3RServer:
         fields = [PointField('x', 0, PointField.FLOAT32, 1),
                   PointField('y', 4, PointField.FLOAT32, 1),
                   PointField('z', 8, PointField.FLOAT32, 1),
-                  PointField('intensity', 12, PointField.FLOAT32, 1)]
-        msg = pc2.create_cloud(header, fields, np.vstack(views))
+                  PointField('intensity',12, PointField.FLOAT32, 1),
+                  PointField('b', 16, PointField.FLOAT32, 1),
+                  PointField('g', 20, PointField.FLOAT32, 1),
+                  PointField('r', 24, PointField.FLOAT32, 1),]
+                  
+        msg = pc2.create_cloud(header, fields, np.vstack(points))
 
         # view1, view2 = np.load(view1), np.load(view2)
         self.pubs[frame_id].publish(msg)
@@ -90,7 +101,7 @@ class OfflineDUSt3RServer:
         
         res.status = LoadDUSt3RResponse.SUCCESS
         if req.publish:
-            self.publish_pointcloud(frame_id, files)
+            self.publish_pointcloud(frame_id, files, [idx1, idx2])
 
         return res
 
