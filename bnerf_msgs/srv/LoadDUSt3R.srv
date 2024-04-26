@@ -1,0 +1,7 @@
+bool publish
+sensor_msgs/Image img1
+sensor_msgs/Image img2
+---
+uint8 status
+sensor_msgs/PointCloud2 cloud1
+sensor_msgs/PointCloud2 cloud2
