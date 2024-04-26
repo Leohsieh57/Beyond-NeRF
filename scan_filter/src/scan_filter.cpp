@@ -31,7 +31,7 @@ namespace beyond_nerf
         sensor_msgs::PointCloud2 output_msg;
         pcl::toROSMsg(output, output_msg);
         pub_.publish(output_msg);
-        LOG(INFO) << "input: " << input->size() 
+        std::cout << "input: " << input->size() 
             << "\toutput: " << output.size() << std::endl;
     }
 }

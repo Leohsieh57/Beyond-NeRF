@@ -6,7 +6,7 @@ import pcl_ros
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import TransformStamped
 from std_srvs.srv import Trigger, TriggerResponse
-from pcl_srv.srv import point_cloud1, point_cloud2, transform
+from pcl_processing.srv import *
 
 #using the ndt method
 def point_cloud_callback(msg):
