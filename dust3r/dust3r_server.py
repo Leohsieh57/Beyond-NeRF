@@ -38,9 +38,6 @@ class OfflineDUSt3RServer:
             xyz_conf = join(cam_dir, 'xyz_conf')
             assert exists(xyz_conf)
             self.data[frame_id] = dict(imgs=imgs, xyz_conf=xyz_conf, idx=to_idx)
-            
-            #npy_files = glob.glob(os.path.join(xyz_conf, "*.npy"))
-            #self.data["cam%s" % cam_idx] = "image_%s" % cam_idx
 
         self.pubs = {}
         for frame_id in self.data:
@@ -54,9 +51,9 @@ class OfflineDUSt3RServer:
 
         imgs = [cv2.imread(img).reshape((-1, 3)) for img in imgs]
         imgs = [img.astype(np.float32) / 255 for img in imgs]
-        views = [np.load(view).reshape((-1, 4)) for view in views]
+        xyzs = [np.load(view).reshape((-1, 4)) for view in views]
 
-        points = [np.hstack(x) for x in zip(views, imgs)]
+        points = [np.hstack(x) for x in zip(xyzs, imgs)]
 
         header = Header()
         header.frame_id = frame_id
@@ -71,8 +68,6 @@ class OfflineDUSt3RServer:
                   PointField('r', 24, PointField.FLOAT32, 1),]
                   
         msg = pc2.create_cloud(header, fields, np.vstack(points))
-
-        # view1, view2 = np.load(view1), np.load(view2)
         self.pubs[frame_id].publish(msg)
 
 
