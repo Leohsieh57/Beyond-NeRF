@@ -53,6 +53,7 @@ class OfflineDUSt3RServer:
             return res
         
         idx1, idx2 = data["idx"][t1], data["idx"][t2]
+        print(idx1, idx2)
         get_npy = lambda i: "%010d_%010d_view%d.npy" % (idx1, idx2, i)
         files = [join(data["xyz_conf"], get_npy(i)) for i in (1, 2)]
 

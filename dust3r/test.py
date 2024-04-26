@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
-from os.path import join, exists
-
-import numpy as np
 import rospy
 
-from bnerf_msgs.srv import LoadDUSt3R, LoadDUSt3RRequest, LoadDUSt3RResponse
+from bnerf_msgs.srv import LoadDUSt3R
 from sensor_msgs.msg import Image
 
-import glob
-from datetime import datetime
 
 class OfflineDUSt3RTester:
     def __init__(self, frame_id = "cam02"):
@@ -22,12 +17,10 @@ class OfflineDUSt3RTester:
         self.sub = rospy.Subscriber(frame_id, Image, self.image_callback)
 
     def image_callback(self, msg):
-        if len(self.last_imgs.data) == 0:
-            self.last_imgs = msg
-            return
-        
-        res = self.service(self.last_imgs, msg, True)
-        print(res.status)
+        if len(self.last_imgs.data):
+            self.service(self.last_imgs, msg, True)
+
+        self.last_imgs = msg
 
 
 
@@ -36,6 +29,5 @@ if __name__ == '__main__':
 
     test1 = OfflineDUSt3RTester("cam02")
     test2 = OfflineDUSt3RTester("cam03")
-    # s = rospy.Service('dust3r/load_dust3r', LoadDUSt3R, dust3r.service_callback)
     
     rospy.spin()
