@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-import json
-import os
+from os.path import join, exists
 
-import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 import rospy
-from tqdm import tqdm
+
 from bnerf_msgs.srv import LoadDUSt3R, LoadDUSt3RRequest, LoadDUSt3RResponse
-from rospkg import RosPack
+
 import glob
 from datetime import datetime
 
@@ -17,26 +14,63 @@ class OfflineDUSt3RServer:
     def __init__(self):
         data_dir = rospy.get_param('dust3r/data_dir')
         self.data = {}
-        for idx in ["02", "03"]:
-            frame_id = "cam%s" % idx
-            xyz_conf = os.path.join(data_dir, "image_" + idx, 'xyz_conf')
-            npy_files = glob.glob(os.path.join(xyz_conf, "*.npy"))
 
-            def line_to_nsecs(line:str):
+        def line_to_nsecs(line:str):
                 secs, nsecs = line.split('.')
                 secs = datetime.strptime(secs, "%Y-%m-%d %H:%M:%S")
                 return int(secs.timestamp() * 1e9) + int(nsecs)
+        
+        for idx in ["02", "03"]:
+            cam_dir = join(data_dir, "image_" + idx)
+            imgs = join(cam_dir, 'input_imgs', '*.png')
+            imgs = sorted(glob.glob(imgs))
 
-            lines = os.path.join(data_dir, "image_" + idx, 'timestamps.txt')
+            lines = join(cam_dir, 'timestamps.txt')
             lines = open(lines, 'r').readlines()
+            assert len(lines) == len(imgs)
             to_idx = {line_to_nsecs(line): i for i, line in enumerate(lines)}
-            print(list(to_idx))
 
+            frame_id = "cam%s" % idx
+            xyz_conf = join(cam_dir, 'xyz_conf')
+            assert exists(xyz_conf)
+            self.data[frame_id] = dict(imgs=imgs, xyz_conf=xyz_conf, idx=to_idx)
+            
+            #npy_files = glob.glob(os.path.join(xyz_conf, "*.npy"))
             #self.data["cam%s" % cam_idx] = "image_%s" % cam_idx
 
-    
+    def service_callback(self, req: LoadDUSt3RRequest):
+        res = LoadDUSt3RResponse()
+
+        frame_id = req.img1.header.frame_id
+        assert frame_id == req.img2.header.frame_id
+
+        data = self.data[frame_id]
+        t1 = req.img1.header.stamp.to_nsec()
+        t2 = req.img2.header.stamp.to_nsec()
+
+        if t1 not in data["idx"] or t2 not in data["idx"]:
+            res.status = LoadDUSt3RResponse.INDEX_ERROR
+            return res
+        
+        idx1, idx2 = data["idx"][t1], data["idx"][t2]
+        get_npy = lambda i: "%010d_%010d_view%d.npy" % (idx1, idx2, i)
+        files = [join(data["xyz_conf"], get_npy(i)) for i in (1, 2)]
+
+        if not all(exists(file) for file in files):
+            res.status = LoadDUSt3RResponse.PAIRING_ERROR
+            return res
+        
+        res.status = LoadDUSt3RResponse.SUCCESS
+        clouds = []
+        for file in files:
+            pass
+
+        return res
 
             
 if __name__ == '__main__':
     rospy.init_node('dust3r_server_node')
-    server = OfflineDUSt3RServer()
+    dust3r = OfflineDUSt3RServer()
+    s = rospy.Service('dust3r/load_dust3r', LoadDUSt3R, dust3r.service_callback)
+    
+    rospy.spin()
