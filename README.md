@@ -10,3 +10,7 @@
  3. `roslaunch scan_filter test_kitti.launch raw_data:=[your-kitti-dir] date:=[see-pic] id:=[see-pic]`
     
  ![enter image description here](https://i.imgur.com/9gVLkiF.png)
+ 
+ 
+ Requirements:
+ sudo apt install python3-pcl
