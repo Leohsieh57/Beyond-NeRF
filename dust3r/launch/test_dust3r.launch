@@ -14,13 +14,6 @@
         args="$(arg calib_dir) $(arg data_dir)" output="log">
     </node>
 
-    <!--node pkg="scan_filter" type="scan_filter_node" name="scan_filter" output="screen">
-        <param name="leaf_size" type="double" value="1" />
-        <remap from="~/raw_scan" to="/velodyne_points"/>
-    </node>
-
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find dust3r)/rviz/test_kitti.rviz" /> -->
-
     <node pkg="dust3r" type="dust3r_server.py" name="dust3r" output="screen">
         <param name="data_dir" type="string" value="$(arg data_dir)" />
     </node>
@@ -28,5 +21,7 @@
     <node pkg="dust3r" type="test.py" name="dust3r_test" output="screen">
         <param name="data_dir" type="string" value="$(arg data_dir)" />
     </node>
+
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find dust3r)/rviz/test_dust3r.rviz" />
 
 </launch>
