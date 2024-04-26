@@ -2,26 +2,58 @@
 
 from __future__ import print_function
 import rospy
-import pcl
+# import pcl
 import pcl_ros
 from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Transform, Quaternion, Vector3
 
 from pcl_processing.srv import *
 import rospy
 import tf2_ros
+from scipy.spatial.transform import Rotation as R
+import numpy as np
 
 
-class TransformFinder:
+class Registrator:
     def __init__(self):
         self.buf = tf2_ros.Buffer()
         self.lis = tf2_ros.TransformListener(self.buf)
 
+    @staticmethod
+    def msg_to_numpy(msg: Transform):
+        q = msg.rotation
+        t = msg.translation
+
+        T = np.eye(4)
+        T[:3,:3] = R.from_quat([q.w, q.x, q.y, q.z]).as_matrix()
+        T[:3,-1] = np.array([t.x, t.y, t.z])
+
+        return T
+    
+    @staticmethod
+    def numpy_to_msg(T):
+        msg = Transform()
+        
+        w, x, y, z = R.from_matrix(T[:3,:3]).as_quat()
+        msg.rotation = Quaternion(x, y, z, w)
+        msg.translation = Vector3(*T[:3,-1])
+
+        return msg
+
+    
     def lookup_transform(self, tgt_header: Header, src_header: Header):
-        trans_wt = self.buf.lookup_transform('world', tgt_header.frame_id, tgt_header.stamp)
-        trans_ws = self.buf.lookup_transform('world', src_header.frame_id, src_header.stamp)
-        print(trans_wt, trans_ws)
+        frame_id = tgt_header.frame_id
+
+
+        Twt = self.buf.lookup_transform('world', frame_id, tgt_header.stamp)
+        print(Twt)
+        Twt = Registrator.msg_to_numpy(Twt.transform)
+        Twt = Registrator.numpy_to_msg(Twt)
+        print(Twt)
+        Tws = self.buf.lookup_transform('world', frame_id, src_header.stamp)
+
+        
 
     def align_point_clouds(self, req: pcl_srvRequest):
         # cloud1 = pcl.PointCloud()
@@ -49,8 +81,8 @@ class TransformFinder:
 
 def pcl_server():
     rospy.init_node('pcl_server')
-    finder = TransformFinder()
-    s = rospy.Service('align_point_clouds', pcl_srv, finder.align_point_clouds)
+    regist = Registrator()
+    s = rospy.Service('align_point_clouds', pcl_srv, regist.align_point_clouds)
     print("Ready to calculate pcl")
     rospy.spin()
 
