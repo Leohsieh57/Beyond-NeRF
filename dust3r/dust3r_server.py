@@ -46,7 +46,8 @@ class OfflineDUSt3RServer:
             self.pubs[frame_id] = pub
 
 
-    def publish_pointcloud(self, frame_id, views, ids):
+    def publish_pointcloud(self, header, views, ids):
+        frame_id = header.frame_id
         imgs = [self.data[frame_id]['imgs'][i] for i in ids]
 
         imgs = [cv2.imread(img).reshape((-1, 3)) for img in imgs]
@@ -55,9 +56,9 @@ class OfflineDUSt3RServer:
 
         points = [np.hstack(x) for x in zip(xyzs, imgs)]
 
-        header = Header()
-        header.frame_id = frame_id
-        header.stamp = rospy.Time.now()
+        # header = Header()
+        # header.frame_id = frame_id
+        # header.stamp = rospy.Time.now()
 
         fields = [PointField('x', 0, PointField.FLOAT32, 1),
                   PointField('y', 4, PointField.FLOAT32, 1),
@@ -96,7 +97,13 @@ class OfflineDUSt3RServer:
         
         res.status = LoadDUSt3RResponse.SUCCESS
         if req.publish:
-            self.publish_pointcloud(frame_id, files, [idx1, idx2])
+            header = Header()
+            header.frame_id = frame_id
+            t1 = req.img1.header.stamp
+            t2 = req.img2.header.stamp
+            dt = (t2 - t1) * 0.5
+            header.stamp = t1 + dt
+            self.publish_pointcloud(header, files, [idx1, idx2])
 
         return res
 
