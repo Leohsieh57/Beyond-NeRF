@@ -13,7 +13,6 @@ namespace bnerf
 
         pub_ = nh.advertise<sensor_msgs::PointCloud2>(topic + "_cloud", 10);
         sub_ = nh.subscribe(topic, 10, &Dust3rTester::ImageCallback, this);
-        req_.publish = true;
     }
 
 
