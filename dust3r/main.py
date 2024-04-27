@@ -5,7 +5,7 @@ import numpy as np
 import rospy
 
 from bnerf_msgs.srv import PredictDUSt3R, PredictDUSt3RRequest, PredictDUSt3RResponse
-from sensor_msgs import point_cloud2 as pc2
+from sensor_msgs.point_cloud2 import create_cloud
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
 
@@ -19,10 +19,10 @@ class DUSt3RServer:
         data_dir = rospy.get_param('dust3r/data_dir')
         self.data = {}
 
-        def line_to_nsecs(line:str):
+        def line_to_stamp(line:str):
             secs, nsecs = line.split('.')
-            secs = datetime.strptime(secs, "%Y-%m-%d %H:%M:%S")
-            return int(secs.timestamp() * 1e9) + int(nsecs)
+            secs = datetime.strptime(secs, "%Y-%m-%d %H:%M:%S").timestamp()
+            return rospy.Time(secs=int(secs), nsecs=int(nsecs))
         
         for idx in ["02", "03"]:
             cam_dir = join(data_dir, "image_" + idx)
@@ -32,12 +32,11 @@ class DUSt3RServer:
             lines = join(cam_dir, 'timestamps.txt')
             lines = open(lines, 'r').readlines()
             assert len(lines) == len(imgs)
-            to_idx = {line_to_nsecs(line): i for i, line in enumerate(lines)}
+            to_idx = {line_to_stamp(line): i for i, line in enumerate(lines)}
 
-            frame_id = "cam" + idx
             xyz_conf = join(cam_dir, 'xyz_conf')
             assert exists(xyz_conf)
-            self.data[frame_id] = dict(imgs=imgs, xyz_conf=xyz_conf, idx=to_idx)
+            self.data["cam" + idx] = dict(imgs=imgs, xyz_conf=xyz_conf, idx=to_idx)
 
         self.pubs = {}
         for frame_id in self.data:
@@ -58,7 +57,7 @@ class DUSt3RServer:
         fields = 'x y z intensity b g r'.split()
         fields = [PointField(c, 4 * i, PointField.FLOAT32, 1) for i, c in enumerate(fields)]
                   
-        msg = pc2.create_cloud(header, fields, np.vstack(points))
+        msg = create_cloud(header, fields, np.vstack(points))
         self.pubs[frame_id].publish(msg)
 
 
@@ -70,11 +69,10 @@ class DUSt3RServer:
         assert frame_id == req.img2.header.frame_id
 
         data = self.data[frame_id]
-        t1 = req.img1.header.stamp.to_nsec()
-        t2 = req.img2.header.stamp.to_nsec()
+        t1 = req.img1.header.stamp
+        t2 = req.img2.header.stamp
 
         if t1 not in data["idx"] or t2 not in data["idx"]:
-            res.status = PredictDUSt3RResponse.INDEX_ERROR
             return res
         
         idx1, idx2 = data["idx"][t1], data["idx"][t2]
@@ -82,17 +80,11 @@ class DUSt3RServer:
         files = [join(data["xyz_conf"], get_npy(i)) for i in (1, 2)]
 
         if not all(exists(file) for file in files):
-            res.status = PredictDUSt3RResponse.PAIRING_ERROR
             return res
         
-        res.status = PredictDUSt3RResponse.SUCCESS
         if req.publish:
-            header = Header()
-            header.frame_id = frame_id
-            t1 = req.img1.header.stamp
-            t2 = req.img2.header.stamp
             dt = (t2 - t1) * 0.5
-            header.stamp = t1 + dt
+            header = Header(frame_id=frame_id, stamp=t1+dt)
             self.publish_pointcloud(header, files, [idx1, idx2])
 
         return res

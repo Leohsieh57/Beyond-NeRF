@@ -2,10 +2,5 @@ sensor_msgs/Image img1
 sensor_msgs/Image img2
 bool publish
 ---
-uint8 status
 sensor_msgs/PointCloud2 cloud1
 sensor_msgs/PointCloud2 cloud2
-
-uint8 SUCCESS=0
-uint8 INDEX_ERROR=1
-uint8 PAIRING_ERROR=2
