@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 
-from pcl_processing.srv import *
+from bnerf_msgs.srv import Registration, RegistrationRequest, RegistrationResponse
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Transform, TransformStamped
 from copy import deepcopy
@@ -14,7 +14,7 @@ class RegistTester:
         self.last_scan = PointCloud2()
         rospy.wait_for_service('align_point_clouds')
         try:
-            self.service = rospy.ServiceProxy('align_point_clouds', pcl_srv)
+            self.service = rospy.ServiceProxy('align_point_clouds', Registration)
         except rospy.ServiceException as e:
             print("Service call failed: %s" % e)
 
@@ -24,8 +24,8 @@ class RegistTester:
 
 
     def scan_callback(self, scan_msg: PointCloud2):
-        trans = Transform()
-        trans.rotation.w = 1 # set to identity
+        init_guess = Transform()
+        init_guess.rotation.w = 1 # set to identity
 
         tgt_scan = deepcopy(self.last_scan)
         src_scan = deepcopy(scan_msg)
@@ -34,9 +34,9 @@ class RegistTester:
         if len(tgt_scan.data) == 0:
             return 
         
-        res: pcl_srvResponse
-        res = self.service(tgt_scan, src_scan, trans)
-        T = res.result_transform
+        res: RegistrationResponse
+        res = self.service(tgt_scan, src_scan, init_guess)
+        T = res.transform
 
         t = rospy.Time.now()
         tgt_scan.header.stamp = t
@@ -52,7 +52,7 @@ class RegistTester:
 
 
 if __name__ == '__main__':
-    rospy.init_node('dust3r_test_node')
+    rospy.init_node('regist_test_node')
     tester = RegistTester("scan_filter/filtered_points")
     
     rospy.spin()

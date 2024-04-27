@@ -8,7 +8,7 @@ from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import TransformStamped, Transform, Quaternion, Vector3
 
-from pcl_processing.srv import *
+from bnerf_msgs.srv import Registration, RegistrationRequest, RegistrationResponse
 import rospy
 import tf2_ros
 from scipy.spatial.transform import Rotation as R
@@ -21,7 +21,11 @@ class Registrator:
         self.lis = tf2_ros.TransformListener(self.buf)
 
 
-    def align_point_clouds(self, req: pcl_srvRequest):
+    def align_point_clouds(self, req: RegistrationRequest):
+        '''
+        service structure changed, 
+        please check bnerf_msgs/srv/Registration.srv
+        '''
         # cloud1 = pcl.PointCloud()
         # cloud2 = pcl.PointCloud()
         
@@ -40,9 +44,9 @@ class Registrator:
 
         # result_transform = pcl_ros.transform_to_msg(reg.getFinalTransformation())
         
-        res = pcl_srvResponse()
-        T = self.lookup_transform(req.point_cloud1.header, req.point_cloud2.header)
-        res.result_transform = T
+        res = RegistrationResponse()
+        T = self.lookup_gps_transform(req.source.header, req.target.header)
+        res.transform = T
         return res
     
 
@@ -69,7 +73,7 @@ class Registrator:
         return msg
 
     
-    def lookup_transform(self, tgt_header: Header, src_header: Header):
+    def lookup_gps_transform(self, tgt_header: Header, src_header: Header):
         frame_id = tgt_header.frame_id
 
         Twt = self.buf.lookup_transform('world', frame_id, tgt_header.stamp)
@@ -86,6 +90,6 @@ class Registrator:
 if __name__ == "__main__":
     rospy.init_node('pcl_server')
     regist = Registrator()
-    s = rospy.Service('align_point_clouds', pcl_srv, regist.align_point_clouds)
+    s = rospy.Service('align_point_clouds', Registration, regist.align_point_clouds)
     print("Ready to calculate pcl")
     rospy.spin()
