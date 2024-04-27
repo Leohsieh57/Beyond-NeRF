@@ -17,34 +17,34 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/include
 )
 
-# file(GLOB CPP_FILES "src/*.cpp")
-# foreach(file ${CPP_FILES})
-#     get_filename_component(FNAME ${file} NAME)
-#     set(SRC_FILES ${SRC_FILES} src/${FNAME})
-# endforeach()
+file(GLOB CPP_FILES "src/*.cpp")
+foreach(file ${CPP_FILES})
+    get_filename_component(FNAME ${file} NAME)
+    set(SRC_FILES ${SRC_FILES} src/${FNAME})
+endforeach()
 
-# add_library(
-#     ${PROJECT_NAME}
-#     ${SRC_FILES}
-# )
+add_library(
+    ${PROJECT_NAME}
+    ${SRC_FILES}
+)
 
-# add_dependencies(
-#     ${PROJECT_NAME} 
-#     ${catkin_EXPORTED_TARGETS}
-# )
+add_dependencies(
+    ${PROJECT_NAME} 
+    ${catkin_EXPORTED_TARGETS}
+)
 
-# target_link_libraries(
-#     ${PROJECT_NAME}
-#     ${catkin_LIBRARIES}
-# )
+target_link_libraries(
+    ${PROJECT_NAME}
+    ${catkin_LIBRARIES}
+)
 
 catkin_package(
-    #INCLUDE_DIRS include
+    INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
     glog_ros
     bnerf_msgs
 )
 
-# add_executable(${PROJECT_NAME}_node main.cpp)
-# target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME})
+add_executable(${PROJECT_NAME}_test test.cpp)
+target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})

@@ -6,7 +6,7 @@ import rospy
 
 from bnerf_msgs.srv import PredictDUSt3R, PredictDUSt3RRequest, PredictDUSt3RResponse
 from sensor_msgs.point_cloud2 import create_cloud
-from sensor_msgs.msg import PointCloud2, PointField
+from sensor_msgs.msg import PointField
 from std_msgs.msg import Header
 
 import glob
@@ -38,29 +38,6 @@ class DUSt3RServer:
             assert exists(xyz_conf)
             self.data["cam" + idx] = dict(imgs=imgs, xyz_conf=xyz_conf, idx=to_idx)
 
-        self.pubs = {}
-        for frame_id in self.data:
-            topic = "dust3r/" + frame_id
-            pub = rospy.Publisher(topic, PointCloud2, queue_size=10)
-            self.pubs[frame_id] = pub
-
-
-    def publish_pointcloud(self, header, views, ids):
-        frame_id = header.frame_id
-        imgs = [self.data[frame_id]['imgs'][i] for i in ids]
-
-        imgs = [cv2.imread(img).reshape((-1, 3)) for img in imgs]
-        imgs = [img.astype(np.float32) / 255 for img in imgs]
-        xyzs = [np.load(view).reshape((-1, 4)) for view in views]
-
-        points = [np.hstack(x) for x in zip(xyzs, imgs)]
-        fields = 'x y z intensity b g r'.split()
-        fields = [PointField(c, 4 * i, PointField.FLOAT32, 1) for i, c in enumerate(fields)]
-                  
-        msg = create_cloud(header, fields, np.vstack(points))
-        self.pubs[frame_id].publish(msg)
-
-
 
     def service_callback(self, req: PredictDUSt3RRequest):
         res = PredictDUSt3RResponse()
@@ -75,24 +52,38 @@ class DUSt3RServer:
         if t1 not in data["idx"] or t2 not in data["idx"]:
             return res
         
-        idx1, idx2 = data["idx"][t1], data["idx"][t2]
-        get_npy = lambda i: "%010d_%010d_view%d.npy" % (idx1, idx2, i)
-        files = [join(data["xyz_conf"], get_npy(i)) for i in (1, 2)]
+        ids = [data["idx"][t1], data["idx"][t2]]
+        get_npy = lambda i: "%010d_%010d_view%d.npy" % (*ids, i)
+        outputs = [join(data["xyz_conf"], get_npy(i)) for i in (1, 2)]
 
-        if not all(exists(file) for file in files):
+        if not all(exists(file) for file in outputs):
             return res
         
-        if req.publish:
-            dt = (t2 - t1) * 0.5
-            header = Header(frame_id=frame_id, stamp=t1+dt)
-            self.publish_pointcloud(header, files, [idx1, idx2])
+        fields = 'x y z intensity b g r'.split()
+        fields = [PointField(c, 4 * i, PointField.FLOAT32, 1) for i, c in enumerate(fields)]
 
+        dt = (t2 - t1) * 0.5
+        header = Header(frame_id=frame_id, stamp=t1+dt)
+
+        clouds = []
+        for idx, file in zip(ids, outputs):
+            img = self.data[frame_id]['imgs'][idx]
+            img = cv2.imread(img).reshape((-1, 3))
+            img = img.astype(np.float32) / 255 
+
+            xyz = np.load(file).reshape((-1, 4))
+            points = np.hstack((xyz, img))
+            print(points.shape)
+            msg = create_cloud(header, fields, points)
+            clouds.append(msg)
+        
+        res.cloud1, res.cloud2 = clouds
         return res
 
             
 if __name__ == '__main__':
     rospy.init_node('dust3r_node')
     dust3r = DUSt3RServer()
-    s = rospy.Service('dust3r/predict_dust3r', PredictDUSt3R, dust3r.service_callback)
+    s = rospy.Service('dust3r_node/predict_dust3r', PredictDUSt3R, dust3r.service_callback)
     
     rospy.spin()

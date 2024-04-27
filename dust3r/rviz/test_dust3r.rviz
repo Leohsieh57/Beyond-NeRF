@@ -74,7 +74,7 @@ Visualization Manager:
       Size (Pixels): 2
       Size (m): 0.0010000000474974513
       Style: Flat Squares
-      Topic: /dust3r/cam02
+      Topic: /dust3r_test/cam02_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -102,7 +102,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.0010000000474974513
       Style: Flat Squares
-      Topic: /dust3r/cam03
+      Topic: /dust3r_test/cam03_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -159,7 +159,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.4757654666900635
+      Distance: 2.6377506256103516
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -167,17 +167,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 1.7961597442626953
-        Y: -0.2107008844614029
-        Z: -0.3884446620941162
+        X: 1.5823016166687012
+        Y: -0.47792765498161316
+        Z: -0.7467688322067261
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.660398542881012
+      Pitch: 0.5703985095024109
       Target Frame: <Fixed Frame>
-      Yaw: 3.49037504196167
+      Yaw: 3.0903613567352295
     Saved: ~
 Window Geometry:
   Displays:

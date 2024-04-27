@@ -19,7 +19,11 @@
 	</group>
 
     <node pkg="dust3r" type="main.py" name="dust3r_node" output="screen"/>
-    <node pkg="dust3r" type="test.py" name="dust3r_test" output="screen"/>
+    <node pkg="dust3r" type="dust3r_test" name="dust3r_test" output="screen">
+        <remap from="~/predict_dust3r" to="/dust3r_node/predict_dust3r"/>
+        <remap from="~/cam02" to="/cam02"/>
+        <remap from="~/cam03" to="/cam03"/>
+    </node>
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find dust3r)/rviz/test_dust3r.rviz" />
 
 </launch>
