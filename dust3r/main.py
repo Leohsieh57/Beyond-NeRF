@@ -52,8 +52,8 @@ class DUSt3RServer:
         if t1 not in data["idx"] or t2 not in data["idx"]:
             return res
         
-        ids = [data["idx"][t1], data["idx"][t2]]
-        get_npy = lambda i: "%010d_%010d_view%d.npy" % (*ids, i)
+        idx1, idx2 = data["idx"][t1], data["idx"][t2]
+        get_npy = lambda i: "%010d_%010d_view%d.npy" % (idx1, idx2, i)
         outputs = [join(data["xyz_conf"], get_npy(i)) for i in (1, 2)]
 
         if not all(exists(file) for file in outputs):
@@ -65,19 +65,17 @@ class DUSt3RServer:
         dt = (t2 - t1) * 0.5
         header = Header(frame_id=frame_id, stamp=t1+dt)
 
-        clouds = []
-        for idx, file in zip(ids, outputs):
+        def get_cloud_msg(idx, file):
             img = self.data[frame_id]['imgs'][idx]
             img = cv2.imread(img).reshape((-1, 3))
             img = img.astype(np.float32) / 255 
 
             xyz = np.load(file).reshape((-1, 4))
             points = np.hstack((xyz, img))
-            print(points.shape)
-            msg = create_cloud(header, fields, points)
-            clouds.append(msg)
-        
-        res.cloud1, res.cloud2 = clouds
+            return create_cloud(header, fields, points)
+
+        res.cloud1 = get_cloud_msg(idx1, outputs[0])
+        res.cloud2 = get_cloud_msg(idx2, outputs[1])
         return res
 
             
