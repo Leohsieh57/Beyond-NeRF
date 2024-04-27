@@ -45,7 +45,7 @@ class Registrator:
         # result_transform = pcl_ros.transform_to_msg(reg.getFinalTransformation())
         
         res = RegistrationResponse()
-        T = self.lookup_gps_transform(req.source.header, req.target.header)
+        T = self.lookup_gps_transform(req.target.header, req.source.header)
         res.transform = T
         return res
     

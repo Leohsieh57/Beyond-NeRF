@@ -23,19 +23,19 @@ class RegistTester:
         self.src_pub = rospy.Publisher("source", PointCloud2, queue_size=10)
 
 
-    def scan_callback(self, scan_msg: PointCloud2):
-        init_guess = Transform()
-        init_guess.rotation.w = 1 # set to identity
-
+    def scan_callback(self, msg: PointCloud2):
         tgt_scan = deepcopy(self.last_scan)
-        src_scan = deepcopy(scan_msg)
-        self.last_scan = scan_msg
+        src_scan = deepcopy(msg)
+        self.last_scan = msg
 
         if len(tgt_scan.data) == 0:
             return 
         
+        init_guess = Transform()
+        init_guess.rotation.w = 1 # set to identity
+        
         res: RegistrationResponse
-        res = self.service(tgt_scan, src_scan, init_guess)
+        res = self.service(target=tgt_scan, source=src_scan, init_guess=init_guess)
         T = res.transform
 
         t = rospy.Time.now()
@@ -44,8 +44,8 @@ class RegistTester:
         src_scan.header.frame_id = "source"
         tgt_scan.header.frame_id = "target"
 
-        kwargs = dict(header=tgt_scan.header, child_frame_id="source", transform=T)
-        self.caster.sendTransform(TransformStamped(**kwargs))
+        msg = TransformStamped(header=tgt_scan.header, child_frame_id="source", transform=T)
+        self.caster.sendTransform(msg)
         self.tgt_pub.publish(tgt_scan)
         self.src_pub.publish(src_scan)
         

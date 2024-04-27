@@ -15,7 +15,7 @@
     </node>
 
     <node pkg="scan_filter" type="scan_filter_node" name="scan_filter" output="log">
-        <param name="leaf_size" type="double" value="0.5" />
+        <param name="leaf_size" type="double" value="0.2" />
         <remap from="~/raw_scan" to="/velodyne_points"/>
     </node>
 
