@@ -4,7 +4,7 @@ from os.path import join, exists
 import numpy as np
 import rospy
 
-from bnerf_msgs.srv import LoadDUSt3R, LoadDUSt3RRequest, LoadDUSt3RResponse
+from bnerf_msgs.srv import PredictDUSt3R, PredictDUSt3RRequest, PredictDUSt3RResponse
 from sensor_msgs import point_cloud2 as pc2
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
@@ -14,7 +14,7 @@ from datetime import datetime
 import cv2
 
 
-class OfflineDUSt3RServer:
+class DUSt3RServer:
     def __init__(self):
         data_dir = rospy.get_param('dust3r/data_dir')
         self.data = {}
@@ -34,7 +34,7 @@ class OfflineDUSt3RServer:
             assert len(lines) == len(imgs)
             to_idx = {line_to_nsecs(line): i for i, line in enumerate(lines)}
 
-            frame_id = "cam%s" % idx
+            frame_id = "cam" + idx
             xyz_conf = join(cam_dir, 'xyz_conf')
             assert exists(xyz_conf)
             self.data[frame_id] = dict(imgs=imgs, xyz_conf=xyz_conf, idx=to_idx)
@@ -55,26 +55,16 @@ class OfflineDUSt3RServer:
         xyzs = [np.load(view).reshape((-1, 4)) for view in views]
 
         points = [np.hstack(x) for x in zip(xyzs, imgs)]
-
-        # header = Header()
-        # header.frame_id = frame_id
-        # header.stamp = rospy.Time.now()
-
-        fields = [PointField('x', 0, PointField.FLOAT32, 1),
-                  PointField('y', 4, PointField.FLOAT32, 1),
-                  PointField('z', 8, PointField.FLOAT32, 1),
-                  PointField('intensity',12, PointField.FLOAT32, 1),
-                  PointField('b', 16, PointField.FLOAT32, 1),
-                  PointField('g', 20, PointField.FLOAT32, 1),
-                  PointField('r', 24, PointField.FLOAT32, 1),]
+        fields = 'x y z intensity b g r'.split()
+        fields = [PointField(c, 4 * i, PointField.FLOAT32, 1) for i, c in enumerate(fields)]
                   
         msg = pc2.create_cloud(header, fields, np.vstack(points))
         self.pubs[frame_id].publish(msg)
 
 
 
-    def service_callback(self, req: LoadDUSt3RRequest):
-        res = LoadDUSt3RResponse()
+    def service_callback(self, req: PredictDUSt3RRequest):
+        res = PredictDUSt3RResponse()
 
         frame_id = req.img1.header.frame_id
         assert frame_id == req.img2.header.frame_id
@@ -84,7 +74,7 @@ class OfflineDUSt3RServer:
         t2 = req.img2.header.stamp.to_nsec()
 
         if t1 not in data["idx"] or t2 not in data["idx"]:
-            res.status = LoadDUSt3RResponse.INDEX_ERROR
+            res.status = PredictDUSt3RResponse.INDEX_ERROR
             return res
         
         idx1, idx2 = data["idx"][t1], data["idx"][t2]
@@ -92,10 +82,10 @@ class OfflineDUSt3RServer:
         files = [join(data["xyz_conf"], get_npy(i)) for i in (1, 2)]
 
         if not all(exists(file) for file in files):
-            res.status = LoadDUSt3RResponse.PAIRING_ERROR
+            res.status = PredictDUSt3RResponse.PAIRING_ERROR
             return res
         
-        res.status = LoadDUSt3RResponse.SUCCESS
+        res.status = PredictDUSt3RResponse.SUCCESS
         if req.publish:
             header = Header()
             header.frame_id = frame_id
@@ -109,8 +99,8 @@ class OfflineDUSt3RServer:
 
             
 if __name__ == '__main__':
-    rospy.init_node('dust3r_server_node')
-    dust3r = OfflineDUSt3RServer()
-    s = rospy.Service('dust3r/load_dust3r', LoadDUSt3R, dust3r.service_callback)
+    rospy.init_node('dust3r_node')
+    dust3r = DUSt3RServer()
+    s = rospy.Service('dust3r/predict_dust3r', PredictDUSt3R, dust3r.service_callback)
     
     rospy.spin()
