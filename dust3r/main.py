@@ -6,7 +6,7 @@ import rospy
 
 from bnerf_msgs.srv import PredictDUSt3R, PredictDUSt3RRequest, PredictDUSt3RResponse
 from sensor_msgs.point_cloud2 import create_cloud
-from sensor_msgs.msg import PointField
+from sensor_msgs.msg import PointField, PointCloud2
 from std_msgs.msg import Header
 
 import glob
@@ -34,48 +34,47 @@ class DUSt3RServer:
             assert len(lines) == len(imgs)
             to_idx = {line_to_stamp(line): i for i, line in enumerate(lines)}
 
-            xyz_conf = join(cam_dir, 'xyz_conf')
-            assert exists(xyz_conf)
-            self.data["cam" + idx] = dict(imgs=imgs, xyz_conf=xyz_conf, idx=to_idx)
+            xyzc = join(cam_dir, 'xyz_conf')
+            assert exists(xyzc)
+            self.data["cam" + idx] = dict(imgs=imgs, xyzc=xyzc, idx=to_idx)
+
+
+    @staticmethod
+    def get_cloud_msg(header, img_file, xyz_file):
+        if not exists(img_file) or not exists(xyz_file):
+            return PointCloud2()
+        
+        img = cv2.imread(img_file).reshape((-1, 3))
+        img = img.astype(np.float32) / 255 
+        xyz = np.load(xyz_file).reshape((-1, 4))
+
+        fields = enumerate('x y z intensity b g r'.split())
+        fields = [PointField(c, 4*i, PointField.FLOAT32, 1) for i, c in fields]
+        return create_cloud(header, fields, np.hstack((xyz, img)))
 
 
     def service_callback(self, req: PredictDUSt3RRequest):
         res = PredictDUSt3RResponse()
-
         frame_id = req.img1.header.frame_id
-        assert frame_id == req.img2.header.frame_id
 
         data = self.data[frame_id]
         t1 = req.img1.header.stamp
         t2 = req.img2.header.stamp
 
-        if t1 not in data["idx"] or t2 not in data["idx"]:
-            return res
-        
-        idx1, idx2 = data["idx"][t1], data["idx"][t2]
-        get_npy = lambda i: "%010d_%010d_view%d.npy" % (idx1, idx2, i)
-        outputs = [join(data["xyz_conf"], get_npy(i)) for i in (1, 2)]
-
-        if not all(exists(file) for file in outputs):
-            return res
-        
-        fields = 'x y z intensity b g r'.split()
-        fields = [PointField(c, 4 * i, PointField.FLOAT32, 1) for i, c in enumerate(fields)]
+        idx1 = data["idx"][t1]
+        idx2 = data["idx"][t2]
 
         dt = (t2 - t1) * 0.5
         header = Header(frame_id=frame_id, stamp=t1+dt)
-
-        def get_cloud_msg(idx, file):
-            img = self.data[frame_id]['imgs'][idx]
-            img = cv2.imread(img).reshape((-1, 3))
-            img = img.astype(np.float32) / 255 
-
-            xyz = np.load(file).reshape((-1, 4))
-            points = np.hstack((xyz, img))
-            return create_cloud(header, fields, points)
-
-        res.cloud1 = get_cloud_msg(idx1, outputs[0])
-        res.cloud2 = get_cloud_msg(idx2, outputs[1])
+        
+        def get_kwargs(i):
+            img_file = data['imgs'][eval("idx%d"%i)]
+            xyz_file = "%010d_%010d_view%s.npy" % (idx1, idx2, i)
+            xyz_file = join(data['xyzc'], xyz_file)
+            return dict(header=header, img_file=img_file, xyz_file=xyz_file)
+        
+        res.cloud1 = DUSt3RServer.get_cloud_msg(**get_kwargs(1))
+        res.cloud2 = DUSt3RServer.get_cloud_msg(**get_kwargs(2))
         return res
 
             

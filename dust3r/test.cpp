@@ -7,8 +7,7 @@ int main (int argc, char **argv)
     FLAGS_colorlogtostderr = true;
     google::InstallFailureSignalHandler();
 
-    const std::string & name = ros::this_node::getName();
-    ros::init(argc, argv, name);
+    ros::init(argc, argv, ros::this_node::getName());
     ros::NodeHandle nh("~"); 
 
     bnerf::Dust3rTester test1(nh, "cam02");
