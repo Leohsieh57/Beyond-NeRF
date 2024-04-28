@@ -33,21 +33,10 @@ namespace bnerf
             return;
         }
 
-        pcl::PointCloud<pcl::PointXYZRGBA> cloud1, cloud2;
-        pcl::fromROSMsg(res.cloud1, cloud1);
-        pcl::fromROSMsg(res.cloud2, cloud2);
+        res.cloud1.width += res.cloud2.width;
+        res.cloud1.data.insert(res.cloud1.data.end(), 
+            res.cloud2.data.begin(), res.cloud2.data.end());
 
-        cloud1 += cloud2;
-
-        // res.cloud1.width += res.cloud2.width;
-        // res.cloud1.data.insert(res.cloud1.data.end(), 
-        //     res.cloud2.data.begin(), res.cloud2.data.end());
-
-        pcl::toROSMsg(cloud1, res.cloud1);
-
-        for (const auto & field : res.cloud1.fields)
-            LOG(INFO) << std::endl << field << std::endl;
-            
         pub_.publish(res.cloud1);
     }
 }
