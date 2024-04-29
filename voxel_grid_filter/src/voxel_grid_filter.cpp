@@ -68,7 +68,8 @@ namespace bnerf
         pcl::PointCloud<pcl::PointXYZI>::Ptr scan(new pcl::PointCloud<pcl::PointXYZI>);
         pcl::fromROSMsg(raw_scan_msg, *scan);
 
-        auto invalid = std::bind(&VoxelGridFilter::IsPointInvalid, this, std::placeholders::_1);
+        using std::placeholders::_1;
+        auto invalid = std::bind(&VoxelGridFilter::IsPointInvalid, this, _1);
         auto iend = remove_if(scan->begin(), scan->end(), invalid);
         scan->erase(iend, scan->end());
 
