@@ -61,7 +61,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: RGBF32
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -72,9 +72,9 @@ Visualization Manager:
       Queue Size: 1
       Selectable: true
       Size (Pixels): 2
-      Size (m): 0.0010000000474974513
+      Size (m): 0.0020000000949949026
       Style: Flat Squares
-      Topic: /dust3r_test/cam02_cloud
+      Topic: /cam02_cloud_filter_node/filtered_points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -89,7 +89,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: RGBF32
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -159,7 +159,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.6377506256103516
+      Distance: 2.716343641281128
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -175,9 +175,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5703985095024109
+      Pitch: 0.5153985619544983
       Target Frame: <Fixed Frame>
-      Yaw: 3.0903613567352295
+      Yaw: 3.195359706878662
     Saved: ~
 Window Geometry:
   Displays:

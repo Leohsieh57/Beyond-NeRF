@@ -20,7 +20,7 @@
     </node>
 
     <node pkg="pcl_processing" type="pcl_server.py" name="pcl_alignment_node" output="screen"/>
-    <node pkg="pcl_processing" type="test.py" name="pcl_alignment_test_node" output="screen"/>
+    <node pkg="pcl_processing" type="test.py" name="pcl_alignment_test" output="screen"/>
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find pcl_processing)/rviz/test_regist.rviz" />
 
 </launch>

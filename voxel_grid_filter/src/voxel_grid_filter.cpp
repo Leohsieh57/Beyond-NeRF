@@ -56,9 +56,9 @@ namespace bnerf
         square_min_range_ *= square_min_range_;
         square_max_range_ *= square_max_range_;
 
-        scan_pub_ = nh.advertise<sensor_msgs::PointCloud2>("filtered_points", 1000);
+        scan_pub_ = nh.advertise<sensor_msgs::PointCloud2>("filtered_points", 100);
         info_pub_ = nh.advertise<bnerf_msgs::VoxelGridFilterInfo>("info", 1000);
-        scan_sub_ = nh.subscribe("raw_scan", 1000, &VoxelGridFilter::ScanCallBack, this);
+        scan_sub_ = nh.subscribe("raw_scan", 100, &VoxelGridFilter::ScanCallBack, this);
     }
 
 
@@ -79,7 +79,7 @@ namespace bnerf
 
         sensor_msgs::PointCloud2 filtered_msg;
         pcl::toROSMsg(*scan, filtered_msg);
-        LOG_ASSERT(filtered_msg.header == raw_scan_msg.header);
+        filtered_msg.header = raw_scan_msg.header;
 
         scan_pub_.publish(filtered_msg);
         const auto t2 = ros::Time::now();
