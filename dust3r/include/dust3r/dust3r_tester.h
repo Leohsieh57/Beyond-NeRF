@@ -14,7 +14,7 @@ namespace bnerf
     {
         public:
         Dust3rTester(ros::NodeHandle &, const std::string &);
-        void ImageCallback(const sensor_msgs::Image &);
+        void ImageCallBack(const sensor_msgs::Image &);
         
         private:
         ros::Publisher pub_;

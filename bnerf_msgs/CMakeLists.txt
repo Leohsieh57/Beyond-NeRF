@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 
-set(SUBDIRS "srv")
+set(SUBDIRS "srv" "msg")
 foreach(DIR ${SUBDIRS})
     file(GLOB ${DIR}_TMPS ${DIR}/*.${DIR})
     foreach(file ${${DIR}_TMPS})
@@ -23,10 +23,10 @@ foreach(DIR ${SUBDIRS})
 endforeach()
 
 
-# add_message_files(
-#     FILES
-#     ${msg_FILES}
-# )
+add_message_files(
+    FILES
+    ${msg_FILES}
+)
 
 
 add_service_files(

@@ -13,11 +13,11 @@ namespace bnerf
         LOG_ASSERT(cli_.waitForExistence(ros::Duration(5)));
 
         pub_ = nh.advertise<sensor_msgs::PointCloud2>(topic + "_cloud", 10);
-        sub_ = nh.subscribe(topic, 10, &Dust3rTester::ImageCallback, this);
+        sub_ = nh.subscribe(topic, 10, &Dust3rTester::ImageCallBack, this);
     }
 
 
-    void Dust3rTester::ImageCallback(const sensor_msgs::Image & msg)
+    void Dust3rTester::ImageCallBack(const sensor_msgs::Image & msg)
     {
         req_.img1 = move(req_.img2);
         req_.img2 = msg;

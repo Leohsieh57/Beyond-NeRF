@@ -1,0 +1,5 @@
+std_msgs/Header header
+
+duration exec_time
+uint32 num_raw_scan_points
+uint32 num_filtered_points
