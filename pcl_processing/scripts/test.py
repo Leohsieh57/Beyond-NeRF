@@ -53,6 +53,6 @@ class RegistTester:
 
 if __name__ == '__main__':
     rospy.init_node('regist_test_node')
-    tester = RegistTester("scan_filter/filtered_points")
+    tester = RegistTester("voxel_grid_filter_node/filtered_points")
     
     rospy.spin()

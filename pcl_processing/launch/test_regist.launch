@@ -14,7 +14,7 @@
         args="$(arg calib_dir) $(arg data_dir)" output="log">
     </node>
 
-    <node pkg="scan_filter" type="scan_filter_node" name="scan_filter" output="log">
+    <node pkg="voxel_grid_filter" type="voxel_grid_filter_node" name="voxel_grid_filter_node" output="screen">
         <param name="leaf_size" type="double" value="0.2" />
         <remap from="~/raw_scan" to="/velodyne_points"/>
     </node>
