@@ -74,7 +74,7 @@ Visualization Manager:
       Size (Pixels): 2
       Size (m): 0.009999999776482582
       Style: Points
-      Topic: /scan_filter/filtered_points
+      Topic: /voxel_grid_filter_node/filtered_points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -107,7 +107,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 131.47061157226562
+      Distance: 97.83595275878906
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -115,17 +115,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.43754011392593384
-        Y: -1.3787888288497925
-        Z: -2.190559148788452
+        X: 12.216473579406738
+        Y: 5.47465705871582
+        Z: -0.7120939493179321
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7853982448577881
+      Pitch: 0.7253983020782471
       Target Frame: <Fixed Frame>
-      Yaw: 4.045411109924316
+      Yaw: 5.145434856414795
     Saved: ~
 Window Geometry:
   Displays:

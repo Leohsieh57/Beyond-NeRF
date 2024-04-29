@@ -50,14 +50,14 @@ namespace bnerf
     VoxelGridFilter::VoxelGridFilter(ros::NodeHandle & nh)
     {
         LOG_ASSERT(nh.getParam("leaf_size", leaf_size_));
-        LOG_ASSERT(nh.getParam("min_range", square_min_range_)); 
-        LOG_ASSERT(nh.getParam("max_range", square_max_range_));
+        nh.param<float>("min_range", square_min_range_, 1e-3);
+        nh.param<float>("max_range", square_max_range_, 200);
         
         square_min_range_ *= square_min_range_;
         square_max_range_ *= square_max_range_;
 
         scan_pub_ = nh.advertise<sensor_msgs::PointCloud2>("filtered_points", 1000);
-        info_pub_ = nh.advertise<bnerf_msgs::VoxelGridFilterInfo>("filter_info", 1000);
+        info_pub_ = nh.advertise<bnerf_msgs::VoxelGridFilterInfo>("info", 1000);
         scan_sub_ = nh.subscribe("raw_scan", 1000, &VoxelGridFilter::ScanCallBack, this);
     }
 
@@ -65,7 +65,6 @@ namespace bnerf
     void VoxelGridFilter::ScanCallBack(const sensor_msgs::PointCloud2 & raw_scan_msg)
     {
         const auto t1 = ros::Time::now();
-
         pcl::PointCloud<pcl::PointXYZI>::Ptr scan(new pcl::PointCloud<pcl::PointXYZI>);
         pcl::fromROSMsg(raw_scan_msg, *scan);
 
