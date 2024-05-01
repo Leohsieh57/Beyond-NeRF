@@ -19,6 +19,7 @@ namespace bnerf
         void ScanCallBack(const sensor_msgs::PointCloud2 &);
 
         //std::string topic_;
+        bool use_approx_;
         float leaf_size_;
         float square_min_range_;
         float square_max_range_;

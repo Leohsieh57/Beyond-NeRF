@@ -52,8 +52,10 @@ namespace bnerf
     VoxelGridFilter::VoxelGridFilter(ros::NodeHandle & nh)
     {
         LOG_ASSERT(nh.getParam("leaf_size", leaf_size_));
+        
         nh.param<float>("min_range", square_min_range_, 1e-3);
         nh.param<float>("max_range", square_max_range_, 200);
+        nh.param<bool>("use_approx", use_approx_, false);
         
         square_min_range_ *= square_min_range_;
         square_max_range_ *= square_max_range_;
@@ -76,10 +78,22 @@ namespace bnerf
         auto iend = remove_if(scan->begin(), scan->end(), invalid);
         scan->erase(iend, scan->end());
 
-        pcl::VoxelGrid<pcl::PointXYZI> voxel_grid;
-        voxel_grid.setLeafSize(leaf_size_, leaf_size_, leaf_size_);
-        voxel_grid.setInputCloud(scan);
-        voxel_grid.filter(*scan);
+        pcl::Filter<pcl::PointXYZI>::Ptr voxel_grid;
+        if (use_approx_)
+        {
+            auto filter = new pcl::ApproximateVoxelGrid<pcl::PointXYZI>;
+            filter->setLeafSize(leaf_size_, leaf_size_, leaf_size_);
+            voxel_grid.reset(filter);
+        }
+        else
+        {
+            auto filter = new pcl::VoxelGrid<pcl::PointXYZI>;
+            filter->setLeafSize(leaf_size_, leaf_size_, leaf_size_);
+            voxel_grid.reset(filter);
+        }
+        
+        voxel_grid->setInputCloud(scan);
+        voxel_grid->filter(*scan);
 
         sensor_msgs::PointCloud2 filtered_msg;
         pcl::toROSMsg(*scan, filtered_msg);
@@ -92,6 +106,7 @@ namespace bnerf
 
         bnerf_msgs::VoxelGridFilterInfo info_msg;
         info_msg.header = filtered_msg.header;
+        info_msg.filter_name = use_approx_? "approximate_voxel_grid": "voxel_grid";
         info_msg.exec_time.fromNSec(nsecs);
         info_msg.num_filtered_points = filtered_msg.width;
         info_msg.num_raw_scan_points = raw_scan_msg.width;

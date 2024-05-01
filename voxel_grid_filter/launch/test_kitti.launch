@@ -16,6 +16,7 @@
 
     <node pkg="voxel_grid_filter" type="voxel_grid_filter_node" name="voxel_grid_filter_node" output="screen">
         <param name="leaf_size" type="double" value="1" />
+        <param name="use_approx" type="bool" value="false" />
         <remap from="~/raw_scan" to="/velodyne_points"/>
     </node>
 
