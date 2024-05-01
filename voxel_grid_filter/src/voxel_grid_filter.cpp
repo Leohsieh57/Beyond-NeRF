@@ -37,6 +37,8 @@
 #include <bnerf_msgs/VoxelGridFilterInfo.h>
 #include <voxel_grid_filter/voxel_grid_filter.h>
 #include <glog/logging.h>
+#include <chrono>
+
 
 namespace bnerf
 {
@@ -64,7 +66,8 @@ namespace bnerf
 
     void VoxelGridFilter::ScanCallBack(const sensor_msgs::PointCloud2 & raw_scan_msg)
     {
-        const auto t1 = ros::Time::now();
+        const auto t1 = std::chrono::high_resolution_clock::now();
+
         pcl::PointCloud<pcl::PointXYZI>::Ptr scan(new pcl::PointCloud<pcl::PointXYZI>);
         pcl::fromROSMsg(raw_scan_msg, *scan);
 
@@ -73,21 +76,23 @@ namespace bnerf
         auto iend = remove_if(scan->begin(), scan->end(), invalid);
         scan->erase(iend, scan->end());
 
-        pcl::VoxelGrid<pcl::PointXYZI> voxel_grid_filter;
-        voxel_grid_filter.setLeafSize(leaf_size_, leaf_size_, leaf_size_);
-        voxel_grid_filter.setInputCloud(scan);
-        voxel_grid_filter.filter(*scan);
+        pcl::VoxelGrid<pcl::PointXYZI> voxel_grid;
+        voxel_grid.setLeafSize(leaf_size_, leaf_size_, leaf_size_);
+        voxel_grid.setInputCloud(scan);
+        voxel_grid.filter(*scan);
 
         sensor_msgs::PointCloud2 filtered_msg;
         pcl::toROSMsg(*scan, filtered_msg);
         filtered_msg.header = raw_scan_msg.header;
 
         scan_pub_.publish(filtered_msg);
-        const auto t2 = ros::Time::now();
+
+        const auto t2 = std::chrono::high_resolution_clock::now();
+        const auto nsecs = std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count();
 
         bnerf_msgs::VoxelGridFilterInfo info_msg;
         info_msg.header = filtered_msg.header;
-        info_msg.exec_time = t2 - t1;
+        info_msg.exec_time.fromNSec(nsecs);
         info_msg.num_filtered_points = filtered_msg.width;
         info_msg.num_raw_scan_points = raw_scan_msg.width;
         info_pub_.publish(info_msg);
