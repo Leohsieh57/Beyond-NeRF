@@ -1,15 +1,26 @@
 <launch>
-	<arg name="benchmark" default="kitti"/>
-	<group ns="scan_loader">
-		<rosparam param="filter_leaves">[0.4, 0.4, 0.4]</rosparam>
-        <param name="benchmark" type="string" value="$(arg benchmark)" />
-        <param name="cache_size" type="int" value="12" />
-        <param name="max_corres" type="int" value="3" />
-        <param name="stride_num" type="int" value="200" />
-        <param name="dataset" type="string" value="/data/$(arg benchmark)" />
-    </group>
+    <arg name="raw_data" default="/data/kitti/raw_data"/>
+    <arg name="date" default="2011_09_26"/>
+    <arg name="id" default="19"/>
 
-	<arg name="solver" default="ndt"/>
+    <arg name="id4d" default="$(eval str(arg('id')).zfill(4))"/>
+    <arg name="sync" value="$(arg date)_drive_$(arg id4d)_sync"/>
+
+    <arg name="calib_dir" value="$(arg raw_data)/$(arg date)_calib/$(arg date)"/>
+    <arg name="data_dir" value="$(arg raw_data)/$(arg sync)/$(arg date)/$(arg sync)"/>
+
+    <param name="use_sim_time" value="true" />
+	<node pkg="kitti_to_rosbag" type="kitti_live_node" name="kitti_to_rosbag" 
+        args="$(arg calib_dir) $(arg data_dir)" output="log">
+    </node>
+
+    <node pkg="voxel_grid_filter" type="voxel_grid_filter_node" name="voxel_grid_filter_node" output="screen">
+        <param name="leaf_size" type="double" value="0.5" />
+        <param name="use_approx" type="bool" value="false" />
+        <remap from="~/raw_scan" to="/velodyne_points"/>
+    </node>
+
+	<arg name="solver" default="gicp"/>
 	<group ns="voxelizer">
 		<group if="$(eval arg('solver') == 'ndt')">
 			<rosparam param="voxel_leaves">[1, 1, 1]</rosparam>
@@ -31,6 +42,8 @@
 		<param name="max_iters" type="int" value="256" />
 	</group>
 	
-	<node pkg="optimizer" type="optimizer_node" name="optimizer_node" output="screen" />
+	<node pkg="optimizer" type="optimizer_node" name="optimizer_node" output="screen" >
+		<remap from="~/input_scan" to="/voxel_grid_filter_node/filtered_points"/>
+    </node>
 
 </launch>
