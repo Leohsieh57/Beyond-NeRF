@@ -15,8 +15,6 @@ initializer(omp_priv=Vec6d::Zero())
         : voxer_(Voxelizer::CreatePtr())
         , best_(new State)
         , temp_(new State)
-        , k_(kmeans_.cols())
-        , preds_(k_)
     {
         ros::NodeHandle nh(ns);
         GET_REQUIRED(nh, "max_iters", max_iters_);
@@ -57,70 +55,6 @@ initializer(omp_priv=Vec6d::Zero())
         }
 
         return best_->trans_;
-    }
-
-
-    void Optimizer::ConvexClustering() {
-        auto kmeans = move(kmeans_);
-        Eigen::SelfAdjointEigenSolver<Mat66d> sol;
-        sol.compute(H_);
-
-        Vec6d diags = sol.eigenvalues();
-        diags = diags.cwiseMax(1e-6);
-        diags = diags.cwiseInverse().cwiseSqrt();
-
-        kmeans_.setZero();
-        auto radis = kmeans_.rightCols<6>();
-        radis = sol.eigenvectors();
-        radis *= sqrt(6) * diags.asDiagonal();
-        kmeans_.leftCols<6>() = -radis;
-
-        const int area = k_ * threads_;
-        Mat67d accums[area];
-        for (int iteration = 0; ros::ok() && iteration < max_iters_; iteration++) {
-            #pragma omp parallel for num_threads(threads_)
-            for (auto &acc : accums)
-                acc.setZero();
-
-            #pragma omp parallel for num_threads(threads_)
-            for (const int &pid : best_->valid_ids_) {
-                const auto b = jacobs_.col(pid);
-                const auto H = hessis_.middleCols<6>(6 * pid);
-
-                auto &label = labels_[pid];
-                VecXd dists = 2 * kmeans_.transpose() * b;
-                dists += (kmeans_.transpose() * H * kmeans_).diagonal();
-                dists.minCoeff(&label);
-
-                const int i = label + k_ * omp_get_thread_num();
-                auto &acc = accums[i];
-                acc.leftCols<6>()  += H;
-                acc.rightCols<1>() += b;
-            }
-
-            ClusteringCallBack();
-
-            #pragma omp parallel for num_threads(threads_)
-            for (int i = 0; i < k_; i++) {
-                auto &acc = accums[i];
-                for (int j = i + k_; j < area; j+=k_) 
-                    acc += accums[j];
-
-                const auto H = acc.leftCols<6>();
-                const auto b = acc.rightCols<1>();
-                kmeans.col(i) = H.ldlt().solve(-b);
-            }
-
-            kmeans.swap(kmeans_);
-            kmeans -= kmeans_;
-
-            bool converge = true;
-            for (int i = 0; converge && i < k_; i++) 
-                converge &= kmeans.col(i).squaredNorm() < epsilon_;
-
-            if (converge)
-                break;
-        }
     }
 
 
@@ -179,7 +113,6 @@ initializer(omp_priv=Vec6d::Zero())
             st->voxels_.resize(w);
         }
         
-        labels_.resize(w);
         errors_.conservativeResize(3, w);
         jacobs_.conservativeResize(6, w);
         hessis_.conservativeResize(6, w * 6);

@@ -4,6 +4,7 @@
 
 #include <Eigen/Core>
 #include <sophus/se3.hpp>
+#include <sophus/sim3.hpp>
 #include <pcl_ros/point_cloud.h>
 #include <visualization_msgs/MarkerArray.h>
 
@@ -20,6 +21,7 @@ namespace bnerf {
     
     using Sophus::SE3d;
     using Sophus::SO3d;
+    using Sophus::Sim3d;
     using visualization_msgs::Marker;
     using visualization_msgs::MarkerArray;
     
