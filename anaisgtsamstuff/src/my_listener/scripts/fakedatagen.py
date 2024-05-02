@@ -10,8 +10,8 @@ def generate_transforms(n=10, path_length=10):
     transforms = []
     for i in range(1, n):
         transform = TransformStamped()
-        transform.transform.translation.x = np.random.normal(1, 0.1)  # for now just 1 meter apart with noise
-        transform.transform.rotation.w = 1  # identity quaternion
+        transform.transform.translation.x = np.random.normal(1, 0.1)  # 1 meter apart with noise
+        transform.transform.rotation.w = 1  # No rotation, identity quaternion
         transform.header.stamp = rospy.Time(times[i])
         transform.header.frame_id = f"pose_{i-1}"
         transform.child_frame_id = f"pose_{i}"
