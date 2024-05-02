@@ -1,14 +1,14 @@
 Panels:
   - Class: rviz/Displays
-    Help Height: 138
+    Help Height: 0
     Name: Displays
     Property Tree Widget:
       Expanded:
         - /Status1
-        - /PointCloud22
+        - /PointCloud21
         - /TF1/Frames1
       Splitter Ratio: 0.5
-    Tree Height: 1118
+    Tree Height: 1256
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -72,7 +72,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 1
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 2
       Size (m): 0.06499999761581421
       Style: Points
       Topic: /optimizer_node/target
@@ -100,7 +100,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 1
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 2
       Size (m): 0.009999999776482582
       Style: Points
       Topic: /optimizer_node/source
@@ -185,7 +185,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 133.83811950683594
+      Distance: 127.2060546875
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -193,17 +193,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 17.350549697875977
-        Y: -2.3318376541137695
-        Z: 8.344632148742676
+        X: 8.733443260192871
+        Y: -3.392615556716919
+        Z: -1.6534836292266846
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 0.8647971153259277
       Target Frame: map
-      Yaw: 4.687758445739746
+      Yaw: 4.134632587432861
     Saved: ~
 Window Geometry:
   Displays:

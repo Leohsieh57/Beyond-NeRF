@@ -297,7 +297,7 @@ int main(int argc, char** argv) {
 
   kitti::KittiLiveNode node(nh, nh_private, calibration_path, dataset_path);
 
-  node.startPublishing(50.0);
+  node.startPublishing(5000.0);
 
   ros::spin();
 
