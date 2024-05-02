@@ -1,0 +1,1 @@
+add_definitions("-D SOPHUS_USE_BASIC_LOGGING")

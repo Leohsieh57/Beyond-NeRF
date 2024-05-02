@@ -1,6 +1,0 @@
-<launch>
-
-  <node pkg="pcl_processing" type="pcl_server.py" name="pcl_alignment_node" output="screen"/>
-
-</launch>
-

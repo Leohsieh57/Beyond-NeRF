@@ -1,0 +1,36 @@
+<launch>
+	<arg name="benchmark" default="kitti"/>
+	<group ns="scan_loader">
+		<rosparam param="filter_leaves">[0.4, 0.4, 0.4]</rosparam>
+        <param name="benchmark" type="string" value="$(arg benchmark)" />
+        <param name="cache_size" type="int" value="12" />
+        <param name="max_corres" type="int" value="3" />
+        <param name="stride_num" type="int" value="200" />
+        <param name="dataset" type="string" value="/data/$(arg benchmark)" />
+    </group>
+
+	<arg name="solver" default="ndt"/>
+	<group ns="voxelizer">
+		<group if="$(eval arg('solver') == 'ndt')">
+			<rosparam param="voxel_leaves">[1, 1, 1]</rosparam>
+		</group>
+		<group if="$(eval arg('solver') == 'gicp')">
+			<param name="accum_knn" type="int" value="20" />
+			<param name="accum_radius" type="double" value="1" />
+			<param name="match_radius" type="double" value="4" />
+		</group>
+		<param name="min_points" type="int" value="6" />
+		<param name="num_threads" type="int" value="16" />
+		<param name="solver" type="string" value="$(arg solver)" />
+	</group>
+
+	<group ns="optimizer">
+		<param name="visualize" type="bool" value="false" />
+		<param name="num_threads" type="int" value="16" />
+		<param name="verbose" type="bool" value="true" />
+		<param name="max_iters" type="int" value="256" />
+	</group>
+	
+	<node pkg="optimizer" type="optimizer_node" name="optimizer_node" output="screen" />
+
+</launch>
