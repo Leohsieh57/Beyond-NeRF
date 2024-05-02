@@ -16,13 +16,13 @@ void ScanCallBack(const CloudXYZ::ConstPtr & cloud)
         return;
 
     optimizer->SetInputSource(last_target);
-    SE3d trans = optimizer->OptimizeAlignment(SE3d());
+    Sim3d trans = optimizer->OptimizeAlignment(Sim3d());
     const auto stamp = ros::Time::now();
     
     target_pub->SetInput(optimizer->GetInputTarget(), stamp);
     source_pub->SetInput(optimizer->GetInputSource(), stamp);
 
-    caster->cast("scan", trans, stamp);
+    caster->cast("scan", SE3d::exp(trans.log().head<6>()), stamp);
     target_pub->TimerCallBack();
     source_pub->TimerCallBack();
 }

@@ -6,10 +6,10 @@
 
 namespace bnerf {
 
-#pragma omp declare reduction(+:Mat66d:omp_out+=omp_in) \
-initializer(omp_priv=Mat66d::Zero())
-#pragma omp declare reduction(+:Vec6d: omp_out+=omp_in) \
-initializer(omp_priv=Vec6d::Zero())
+#pragma omp declare reduction(+:Mat77d:omp_out+=omp_in) \
+initializer(omp_priv=Mat77d::Zero())
+#pragma omp declare reduction(+:Vec7d: omp_out+=omp_in) \
+initializer(omp_priv=Vec7d::Zero())
 
     Optimizer::Optimizer(const string &ns)
         : voxer_(Voxelizer::CreatePtr())
@@ -26,7 +26,7 @@ initializer(omp_priv=Vec6d::Zero())
     }
 
 
-    SE3d Optimizer::OptimizeAlignment(const SE3d &guess, function<void()> callback) {
+    Sim3d Optimizer::OptimizeAlignment(const Sim3d &guess, function<void()> callback) {
         penalty_ = voxer_->GetPenalty();
         SetEstimation(guess);
 
@@ -39,12 +39,12 @@ initializer(omp_priv=Vec6d::Zero())
             if (callback != NULL)
                 callback();
 
-            Vec6d inc = H_.ldlt().solve(-b_);
+            Vec7d inc = H_.ldlt().solve(-b_);
             LOG_ASSERT(inc.allFinite());
             if (inc.squaredNorm() < epsilon_)
                 break;
 
-            SE3d eps = SE3d::exp(inc);
+            Sim3d eps = Sim3d::exp(inc);
             SetEstimation(eps * best_->trans_);
             
             if (verbose_) 
@@ -67,12 +67,13 @@ initializer(omp_priv=Vec6d::Zero())
             const auto &vox = st->voxels_[pid];
             LOG_ASSERT(vox);
 
-            Mat63d jb;
+            Mat73d jb;
             jb.topRows<3>().setIdentity();
-            jb.bottomRows<3>() = SO3d::hat(trans_pts_.col(pid));
+            jb.middleRows<3>(3) = SO3d::hat(trans_pts_.col(pid));
+            jb.bottomRows<1>() = trans_pts_.col(pid).transpose();
 
             auto bi = jacobs_.col(pid);
-            auto Hi = hessis_.middleCols<6>(6 * pid);
+            auto Hi = hessis_.middleCols<7>(7 * pid);
 
             b_ += bi = jb * vox->info_ * errors_.col(pid);
             H_ += Hi = jb * vox->info_ * jb.transpose();
@@ -80,7 +81,7 @@ initializer(omp_priv=Vec6d::Zero())
     }
 
 
-    void Optimizer::SetEstimation(const SE3d &trans) {
+    void Optimizer::SetEstimation(const Sim3d &trans) {
         temp_->trans_ = trans;
         double &loss = temp_->loss_ = 0;
 
@@ -114,8 +115,8 @@ initializer(omp_priv=Vec6d::Zero())
         }
         
         errors_.conservativeResize(3, w);
-        jacobs_.conservativeResize(6, w);
-        hessis_.conservativeResize(6, w * 6);
+        jacobs_.conservativeResize(7, w);
+        hessis_.conservativeResize(7, w * 7);
         trans_pts_.conservativeResize(3, w);
     }
 
