@@ -13,6 +13,7 @@ namespace bnerf {
             const string &id, const int &queue=10);
 
         void SetInput(CloudXYZ::ConstPtr, const ros::Time &t = ros::Time());
+        void TimerCallBack(const ros::TimerEvent & e = ros::TimerEvent());
         ros::Timer CreateTimer(const double &);
         typedef shared_ptr<CloudPublisher> Ptr;
 
@@ -23,8 +24,6 @@ namespace bnerf {
         mutex mutex_;
         ros::Time stamp_;
         CloudXYZ::ConstPtr cloud_;
-
-        void TimerCallBack(const ros::TimerEvent &);
     };
 }
 
