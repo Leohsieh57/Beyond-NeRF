@@ -1,7 +1,0 @@
-<launch>
-    <!-- <arg name="output_bag" value="$(find kitti2bag)/output/2011_09_29_drive_0071_extract.bag"/> -->
-    <arg name="output_bag" value="$(find kitti2bag)/output/2011_09_26_drive_0019_sync.bag"/>
-    <node pkg="rosbag" type="play" name="kitti_replay_node" output="log" 
-        args="--clock --hz=1000000 $(arg output_bag)"/>
-	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find dataset_replayer)/rviz/kitti.rviz" />
-</launch>
