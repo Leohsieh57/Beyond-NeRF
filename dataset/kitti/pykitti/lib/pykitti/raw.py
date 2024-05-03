@@ -255,8 +255,8 @@ class raw:
                 # NB: datetime only supports microseconds, but KITTI timestamps
                 # give nanoseconds, so need to truncate last 4 characters to
                 # get rid of \n (counts as 1) and extra 3 digits
-                t = dt.datetime.strptime(line[:-4], '%Y-%m-%d %H:%M:%S.%f')
-                self.timestamps.append(t)
+                #t = dt.datetime.strptime(line[:-4], '%Y-%m-%d %H:%M:%S.%f')
+                self.timestamps.append(line)
 
         # Subselect the chosen range of frames, if any
         if self.frames is not None:

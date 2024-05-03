@@ -25,13 +25,18 @@ from cv_bridge import CvBridge
 import numpy as np
 
 
+def line_to_stamp(line:str):
+    secs, nsecs = line.split('.')
+    secs = datetime.strptime(secs, "%Y-%m-%d %H:%M:%S").timestamp()
+    return rospy.Time(secs=int(secs), nsecs=int(nsecs))
+
 def save_imu_data(bag, kitti, imu_frame_id, topic):
     print("Exporting IMU")
     for timestamp, oxts in zip(kitti.timestamps, kitti.oxts):
         q = tf.transformations.quaternion_from_euler(oxts.packet.roll, oxts.packet.pitch, oxts.packet.yaw)
         imu = Imu()
         imu.header.frame_id = imu_frame_id
-        imu.header.stamp = rospy.Time.from_sec(float(timestamp.strftime("%s.%f")))
+        imu.header.stamp = line_to_stamp(timestamp)
         imu.orientation.x = q[0]
         imu.orientation.y = q[1]
         imu.orientation.z = q[2]
@@ -51,7 +56,7 @@ def save_dynamic_tf(bag, kitti, kitti_type, initial_time):
         for timestamp, oxts in zip(kitti.timestamps, kitti.oxts):
             tf_oxts_msg = TFMessage()
             tf_oxts_transform = TransformStamped()
-            tf_oxts_transform.header.stamp = rospy.Time.from_sec(float(timestamp.strftime("%s.%f")))
+            tf_oxts_transform.header.stamp = line_to_stamp(timestamp)
             tf_oxts_transform.header.frame_id = 'world'
             tf_oxts_transform.child_frame_id = 'base_link'
 
@@ -79,7 +84,7 @@ def save_dynamic_tf(bag, kitti, kitti_type, initial_time):
         for timestamp, tf_matrix in zip(timestamps, kitti.T_w_cam0):
             tf_msg = TFMessage()
             tf_stamped = TransformStamped()
-            tf_stamped.header.stamp = rospy.Time.from_sec(timestamp)
+            tf_stamped.header.stamp = line_to_stamp(timestamp)
             tf_stamped.header.frame_id = 'world'
             tf_stamped.child_frame_id = 'camera_left'
             
@@ -110,7 +115,7 @@ def save_camera_data(bag, kitti_type, kitti, util, bridge, camera, camera_frame_
         image_path = os.path.join(image_dir, 'data')
         image_filenames = sorted(os.listdir(image_path))
         with open(os.path.join(image_dir, 'timestamps.txt')) as f:
-            image_datetimes = map(lambda x: datetime.strptime(x[:-4], '%Y-%m-%d %H:%M:%S.%f'), f.readlines())
+            image_datetimes = f.readlines()
         
         calib = CameraInfo()
         calib.header.frame_id = camera_frame_id
@@ -143,10 +148,10 @@ def save_camera_data(bag, kitti_type, kitti, util, bridge, camera, camera_frame_
         image_message = bridge.cv2_to_imgmsg(cv_image, encoding=encoding)
         image_message.header.frame_id = camera_frame_id
         if kitti_type.find("raw") != -1:
-            image_message.header.stamp = rospy.Time.from_sec(float(datetime.strftime(dt, "%s.%f")))
+            image_message.header.stamp = line_to_stamp(dt)
             topic_ext = "/image_raw"
         elif kitti_type.find("odom") != -1:
-            image_message.header.stamp = rospy.Time.from_sec(dt)
+            image_message.header.stamp = line_to_stamp(dt)
             topic_ext = "/image_rect"
         calib.header.stamp = image_message.header.stamp
         bag.write(topic + topic_ext, image_message, t = image_message.header.stamp)
@@ -163,8 +168,8 @@ def save_velo_data(bag, kitti, velo_frame_id, topic, is_sync):
         for line in lines:
             if len(line) == 1:
                 continue
-            dt = datetime.strptime(line[:-4], '%Y-%m-%d %H:%M:%S.%f')
-            velo_datetimes.append(dt)
+            # dt = datetime.strptime(line[:-4], '%Y-%m-%d %H:%M:%S.%f')
+            velo_datetimes.append(line)
 
     iterable = zip(velo_datetimes, velo_filenames)
     # bar = progressbar.ProgressBar()
@@ -183,7 +188,7 @@ def save_velo_data(bag, kitti, velo_frame_id, topic, is_sync):
         # create header
         header = Header()
         header.frame_id = velo_frame_id
-        header.stamp = rospy.Time.from_sec(float(datetime.strftime(dt, "%s.%f")))
+        header.stamp = line_to_stamp(dt)
 
         # fill pcl msg
         fields = [PointField('x', 0, PointField.FLOAT32, 1),
@@ -228,8 +233,8 @@ def save_static_transforms(bag, transforms, timestamps):
     for transform in transforms:
         t = get_static_transform(from_frame_id=transform[0], to_frame_id=transform[1], transform=transform[2])
         tfm.transforms.append(t)
-    for timestamp in set(timestamps):
-        time = rospy.Time.from_sec(float(timestamp.strftime("%s.%f")))
+    for timestamp in timestamps:
+        time = line_to_stamp(timestamp)
         for i in range(len(tfm.transforms)):
             tfm.transforms[i].header.stamp = time
         bag.write('/tf_static', tfm, t=time)
@@ -239,7 +244,7 @@ def save_gps_fix_data(bag, kitti, gps_frame_id, topic):
     for timestamp, oxts in zip(kitti.timestamps, kitti.oxts):
         navsatfix_msg = NavSatFix()
         navsatfix_msg.header.frame_id = gps_frame_id
-        navsatfix_msg.header.stamp = rospy.Time.from_sec(float(timestamp.strftime("%s.%f")))
+        navsatfix_msg.header.stamp = line_to_stamp(timestamp)
         navsatfix_msg.latitude = oxts.packet.lat
         navsatfix_msg.longitude = oxts.packet.lon
         navsatfix_msg.altitude = oxts.packet.alt
@@ -251,7 +256,7 @@ def save_gps_vel_data(bag, kitti, gps_frame_id, topic):
     for timestamp, oxts in zip(kitti.timestamps, kitti.oxts):
         twist_msg = TwistStamped()
         twist_msg.header.frame_id = gps_frame_id
-        twist_msg.header.stamp = rospy.Time.from_sec(float(timestamp.strftime("%s.%f")))
+        twist_msg.header.stamp = line_to_stamp(timestamp)
         twist_msg.twist.linear.x = oxts.packet.vf
         twist_msg.twist.linear.y = oxts.packet.vl
         twist_msg.twist.linear.z = oxts.packet.vu
