@@ -189,7 +189,7 @@ def save_velo_data(bag, kitti, velo_frame_id, topic, is_sync):
         fields = [PointField('x', 0, PointField.FLOAT32, 1),
                   PointField('y', 4, PointField.FLOAT32, 1),
                   PointField('z', 8, PointField.FLOAT32, 1),
-                  PointField('i', 12, PointField.FLOAT32, 1)]
+                  PointField('intensity', 12, PointField.FLOAT32, 1)]
         pcl_msg = pcl2.create_cloud(header, fields, scan)
 
         bag.write(topic + '/pointcloud', pcl_msg, t=pcl_msg.header.stamp)
@@ -228,7 +228,7 @@ def save_static_transforms(bag, transforms, timestamps):
     for transform in transforms:
         t = get_static_transform(from_frame_id=transform[0], to_frame_id=transform[1], transform=transform[2])
         tfm.transforms.append(t)
-    for timestamp in timestamps:
+    for timestamp in set(timestamps):
         time = rospy.Time.from_sec(float(timestamp.strftime("%s.%f")))
         for i in range(len(tfm.transforms)):
             tfm.transforms[i].header.stamp = time
