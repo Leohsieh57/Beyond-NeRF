@@ -53,7 +53,7 @@ namespace bnerf {
 
         #pragma omp parallel for num_threads(threads_)
         for (int vid = 0; vid < vol; vid++) {
-            int *data = counts_ + vid;
+            int *data = counts_.data() + vid;
             for (int i = 1; i < threads_; i++) 
                 counts_[vid] += *(data += vol);
         }
@@ -62,7 +62,7 @@ namespace bnerf {
             return counts_[vid] < min_pts_; };
             
         auto get_acc = [this](const size_t &vid) {
-            return accums_ + vid * strides_; };
+            return accums_.data() + vid * strides_; };
             
         #pragma omp parallel for num_threads(threads_)
         for (int vid = 0; vid < vol; vid++) 
