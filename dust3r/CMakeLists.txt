@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     pcl_ros
     bnerf_msgs
-    glog_ros
+    bnerf_utils
 )
 
 include_directories(
@@ -42,7 +42,7 @@ catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
-    glog_ros
+    bnerf_utils
     bnerf_msgs
 )
 

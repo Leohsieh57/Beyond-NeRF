@@ -8,8 +8,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
 find_package(catkin REQUIRED COMPONENTS
     roscpp
     pcl_ros
-    bnerf_msgs
-    glog_ros
+    bnerf_utils
     pcl_conversions
 )
 
@@ -43,8 +42,7 @@ catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
-    glog_ros
-    bnerf_msgs
+    bnerf_utils
 )
 
 add_executable(${PROJECT_NAME}_node main.cpp)

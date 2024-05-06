@@ -9,7 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     pcl_ros
     bnerf_utils
-    glog_ros
     pcl_conversions
 )
 
@@ -43,7 +42,6 @@ catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
-    glog_ros
     bnerf_utils
 )
 

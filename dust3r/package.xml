@@ -7,9 +7,9 @@
   <license>TODO</license>
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>glog_ros</build_depend>
-  <exec_depend>glog_ros</exec_depend>
-  <build_export_depend>glog_ros</build_export_depend>
+  <build_depend>bnerf_utils</build_depend>
+  <exec_depend>bnerf_utils</exec_depend>
+  <build_export_depend>bnerf_utils</build_export_depend>
 
   <build_depend>bnerf_msgs</build_depend>
   <exec_depend>bnerf_msgs</exec_depend>
