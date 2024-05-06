@@ -2,6 +2,7 @@ data/
 build/
 drc
 .vscode/
+hdl_graph_slam
 
 # Large Objects
 *.d

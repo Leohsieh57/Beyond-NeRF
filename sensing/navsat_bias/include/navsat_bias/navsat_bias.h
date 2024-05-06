@@ -20,12 +20,10 @@ namespace bnerf
 
         ros::Publisher edge_pub_;
         ros::Subscriber gps_sub_;
-
-        string tgt_frame_;
+        
         unique_ptr<const Vec3d> utm_bias_;
         mutex utm_bias_mutex_;
 
-        SE3d gps_to_tgt_;
         Mat33d cov_;
     };
 }

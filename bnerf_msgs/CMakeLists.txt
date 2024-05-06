@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
     message_generation 
 )
 
-
 set(SUBDIRS "srv" "msg")
 foreach(DIR ${SUBDIRS})
     file(GLOB ${DIR}_TMPS ${DIR}/*.${DIR})
