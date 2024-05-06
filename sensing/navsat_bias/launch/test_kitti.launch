@@ -1,0 +1,12 @@
+<launch>
+    <include file="$(find kitti2bag)/launch/replay.launch"/>
+    <node pkg="navsat_bias" type="navsat_bias_node" name="navsat_bias_node" output="screen">
+        <param name="cov_x" type="double" value="1.0" />
+        <param name="cov_y" type="double" value="1.0" />
+        <param name="cov_z" type="double" value="100.0" />
+        <param name="tgt_frame" type="string" value="velo_link" />
+        <param name="gps_frame" type="string" value="imu_link" />
+        <remap from="~/navsat_fix" to="/kitti/oxts/gps/fix"/>
+    </node>
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find navsat_bias)/rviz/kitti.rviz" />
+</launch>

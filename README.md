@@ -14,3 +14,5 @@
  
  Requirements:
  sudo apt install python3-pcl
+
+ sudo apt install ros-noetic-geodesy
