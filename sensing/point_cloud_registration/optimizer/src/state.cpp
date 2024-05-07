@@ -2,8 +2,10 @@
 #include <omp.h>
 
 
-namespace bnerf {
-    int State::GetValidIds(const int &threads) {
+namespace bnerf
+{
+    int State::GetValidIds(const int &threads)
+    {
         int valids = 0;
         #pragma omp parallel for num_threads(threads) reduction(+:valids)
         for (const auto &vox : voxels_)

@@ -6,8 +6,10 @@
 #include <voxelizer/voxel.h>
 
 
-namespace bnerf {
-    struct State {
+namespace bnerf
+{
+    struct State
+    {
         SE3d trans_;
         double loss_;
 
