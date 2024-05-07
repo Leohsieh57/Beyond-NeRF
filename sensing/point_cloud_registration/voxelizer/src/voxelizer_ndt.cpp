@@ -1,9 +1,9 @@
-#include <voxelizer/ndt_voxelizer.h>
+#include <voxelizer/voxelizer_ndt.h>
 #include <bnerf_utils/bnerf_utils.h>
 
 
 namespace bnerf {
-    NdtVoxelizer::NdtVoxelizer(ros::NodeHandle &nh)
+    VoxelizerNDT::VoxelizerNDT(ros::NodeHandle &nh)
         : Voxelizer(nh)
     {
         vector<double> leaf;
@@ -18,25 +18,26 @@ namespace bnerf {
     }
 
 
-    Voxel::ConstPtr NdtVoxelizer::GetVoxel(const Vec3d &pt) const {
-        if ((pt.array() > box_max_.array()).any())
+    Voxel::ConstPtr VoxelizerNDT::GetVoxel(const Vec3d &pt) const {
+        if ((pt.array() >= box_max_.array()).any())
             return nullptr;
 
-        if ((pt.array() < box_min_.array()).any())
+        if ((pt.array() <= box_min_.array()).any())
             return nullptr;
 
         auto ids = ileaf_.cwiseProduct(pt - box_min_).cast<int>();
         uint vid = shifts_.tail<3>().dot(ids);
+        LOG_ASSERT(vid < voxels_.size()) << endl << vid << "\t" << voxels_.size();
         return voxels_[vid];
     }
 
 
-    double NdtVoxelizer::GetPenalty() const {
+    double VoxelizerNDT::GetPenalty() const {
         return leaf_.squaredNorm();
     }
 
 
-    int NdtVoxelizer::ComputeVolume() {
+    int VoxelizerNDT::ComputeVolume() {
         const auto pts = target_->getMatrixXfMap().topRows<3>();
         box_min_ = pts.rowwise().minCoeff().cast<double>(); 
         box_max_ = pts.rowwise().maxCoeff().cast<double>();
@@ -58,7 +59,7 @@ namespace bnerf {
     }
 
 
-    void NdtVoxelizer::GetAccumIds(
+    void VoxelizerNDT::GetAccumIds(
         const int &pid, vector<int> &accum_ids) const 
     {
         Vec3d ids = target_->at(pid).getVector3fMap().cast<double>();

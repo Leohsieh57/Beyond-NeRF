@@ -1,14 +1,14 @@
-#ifndef __NDT_VOXELIZER_H__
-#define __NDT_VOXELIZER_H__
+#ifndef __VOXELIZER_NDT_H__
+#define __VOXELIZER_NDT_H__
 
 
 #include <voxelizer/voxelizer.h>
 
 
 namespace bnerf {
-    class NdtVoxelizer : public Voxelizer {
+    class VoxelizerNDT : public Voxelizer {
         public: 
-        NdtVoxelizer(ros::NodeHandle &);
+        VoxelizerNDT(ros::NodeHandle &);
         Voxel::ConstPtr GetVoxel(const Vec3d &) const override;
         
         private: 

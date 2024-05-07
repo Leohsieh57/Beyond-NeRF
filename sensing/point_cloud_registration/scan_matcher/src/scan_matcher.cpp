@@ -1,11 +1,12 @@
 #include <glog/logging.h>
 #include <bnerf_utils/conversions.h>
 #include <scan_matcher/scan_matcher.h>
-#include <voxelizer/ndt_voxelizer.h>
-#include <voxelizer/gicp_voxelizer.h>
+#include <voxelizer/voxelizer_ndt.h>
+#include <voxelizer/voxelizer_gicp.h>
 #include <bnerf_msgs/GraphBinaryEdge.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/common/transforms.h>
 
 
 namespace bnerf
@@ -32,12 +33,12 @@ namespace bnerf
         {
             src_pub_.reset(new ros::Publisher());
             tgt_pub_.reset(new ros::Publisher);
-            *src_pub_ = nh_.advertise<CloudXYZI>("source_scan", 128);
-            *tgt_pub_ = nh_.advertise<CloudXYZI>("target_scan", 128);
+            *src_pub_ = nh_.advertise<CloudXYZ>("source_scan_matched", 128);
+            *tgt_pub_ = nh_.advertise<CloudXYZ>("target_scan_matched", 128);
         }
 
-        src_sub_ = nh_.subscribe("source_scan", 16, &ScanMatcher::SourceScanCallBack, this);
-        tgt_sub_ = nh_.subscribe("target_scan", 16, &ScanMatcher::TargetScanCallBack, this);
+        src_sub_ = nh_.subscribe("source_scan", 8, &ScanMatcher::SourceScanCallBack, this);
+        tgt_sub_ = nh_.subscribe("target_scan", 8, &ScanMatcher::TargetScanCallBack, this);
     }
 
 
@@ -70,6 +71,8 @@ namespace bnerf
         }
 
         PublishBinaryEdge(data);
+        if (tgt_pub_)
+            VisualizeAlignment(data);
     }
 
 
@@ -101,9 +104,16 @@ namespace bnerf
     }
 
 
-    void VisualizeAlignment(const OptimData &)
+    void ScanMatcher::VisualizeAlignment(const OptimData & data)
     {
+        const auto target = data.voxer_->GetInputTarget();
+        Mat44f trans = data.best_->trans_.matrix().cast<float>();
 
+        CloudXYZ source;
+        pcl::transformPointCloud(*data.source_, source, trans);
+        source.header = target->header;
+        src_pub_->publish(source);
+        tgt_pub_->publish(*target);
     }
 
 
@@ -120,10 +130,10 @@ namespace bnerf
         LOG_ASSERT(target);
 
         Voxelizer::Ptr voxer;
-        if (!use_gicp_)
-            voxer.reset(new NdtVoxelizer(nh_));
+        if (use_gicp_)
+            voxer.reset(new VoxelizerGICP(nh_));
         else
-            voxer.reset(new GicpVoxelizer(nh_));
+            voxer.reset(new VoxelizerNDT(nh_));
 
         voxer->SetInputTarget(target);
         lock_guard<mutex> lock(vox_mutex_);

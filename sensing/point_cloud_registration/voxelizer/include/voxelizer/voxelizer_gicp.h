@@ -1,5 +1,5 @@
-#ifndef __GICP_VOXELIZER_H__
-#define __GICP_VOXELIZER_H__
+#ifndef __VOXELIZER_GICP_H__
+#define __VOXELIZER_GICP_H__
 
 
 #include <voxelizer/voxelizer.h>
@@ -7,9 +7,9 @@
 
 
 namespace bnerf {
-    class GicpVoxelizer : public Voxelizer {
+    class VoxelizerGICP : public Voxelizer {
         public: 
-        GicpVoxelizer(ros::NodeHandle &);
+        VoxelizerGICP(ros::NodeHandle &);
         Voxel::ConstPtr GetVoxel(const Vec3d &) const override;
         
         private: 

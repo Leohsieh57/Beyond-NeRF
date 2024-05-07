@@ -1,10 +1,10 @@
-#include <voxelizer/gicp_voxelizer.h>
+#include <voxelizer/voxelizer_gicp.h>
 #include <bnerf_utils/bnerf_utils.h>
 #include <omp.h>
 
 
 namespace bnerf {
-    GicpVoxelizer::GicpVoxelizer(ros::NodeHandle &nh)
+    VoxelizerGICP::VoxelizerGICP(ros::NodeHandle &nh)
         : Voxelizer(nh)
     {
         GET_REQUIRED(nh, "accum_knn", accum_knn_);
@@ -13,12 +13,12 @@ namespace bnerf {
     }
 
 
-    double GicpVoxelizer::GetPenalty() const {
+    double VoxelizerGICP::GetPenalty() const {
         return match_radi_ * match_radi_;
     }
 
 
-    Voxel::ConstPtr GicpVoxelizer::GetVoxel(const Vec3d &pt) const {
+    Voxel::ConstPtr VoxelizerGICP::GetVoxel(const Vec3d &pt) const {
         vector<int> ids;
         vector<float> dists;
 
@@ -29,7 +29,7 @@ namespace bnerf {
     }
 
 
-    void GicpVoxelizer::SetInputCallBack() {
+    void VoxelizerGICP::SetInputCallBack() {
         const size_t &vol = voxels_.size();
 
         size_t valids = 0;
@@ -88,13 +88,14 @@ namespace bnerf {
     }
 
 
-    int GicpVoxelizer::ComputeVolume() {
+    int VoxelizerGICP::ComputeVolume() 
+    {
         tree_.setInputCloud(target_);
         return target_->size();
     }
 
 
-    void GicpVoxelizer::GetAccumIds(
+    void VoxelizerGICP::GetAccumIds(
         const int &pid, vector<int> &ids) const 
     {
         vector<float> dists;

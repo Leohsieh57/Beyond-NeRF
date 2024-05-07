@@ -32,9 +32,6 @@ namespace bnerf {
 
         private:
         int min_pts_, strides_;
-        Array<int> counts_;
-        Array<double> accums_;
-        Array<vector<int>> accum_ids_;
         Voxel::ConstPtr CreateVoxel(Eigen::Map<Mat34d> &);
 
         public:
