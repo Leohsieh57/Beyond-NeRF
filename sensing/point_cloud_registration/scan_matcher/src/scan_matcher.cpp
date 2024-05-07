@@ -27,7 +27,7 @@ namespace bnerf
         edge_pub_ = nh_.advertise<bnerf_msgs::GraphBinaryEdge>("regist_binary_edge", 128);
         
         bool visualize;
-        GET_OPTIONAL(nh_, "visualize", epsilon_, false);
+        GET_OPTIONAL(nh_, "visualize", visualize, false);
         if (visualize)
         {
             src_pub_.reset(new ros::Publisher());
@@ -35,6 +35,9 @@ namespace bnerf
             *src_pub_ = nh_.advertise<CloudXYZI>("source_scan", 128);
             *tgt_pub_ = nh_.advertise<CloudXYZI>("target_scan", 128);
         }
+
+        src_sub_ = nh_.subscribe("source_scan", 16, &ScanMatcher::SourceScanCallBack, this);
+        tgt_sub_ = nh_.subscribe("target_scan", 16, &ScanMatcher::TargetScanCallBack, this);
     }
 
 
