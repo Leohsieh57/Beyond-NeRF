@@ -1,5 +1,5 @@
-Header header
-time source_stamp
+time stamp1
+time stamp2
 
 geometry_msgs/Transform transform
 float64[36] covariance

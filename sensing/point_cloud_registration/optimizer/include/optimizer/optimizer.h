@@ -11,7 +11,8 @@ namespace bnerf {
     class Optimizer {
         public: 
         Optimizer(const string &ns = "optimizer");
-        SE3d OptimizeAlignment(const SE3d &);
+        SE3d OptimizeAlignment(const SE3d &, 
+            function<void()> callback = NULL);
 
         void SetInputSource(CloudXYZ::ConstPtr);
         void SetInputTarget(CloudXYZ::ConstPtr);
@@ -25,6 +26,8 @@ namespace bnerf {
         Voxelizer::Ptr voxer_;
         State::Ptr best_, temp_;
         CloudXYZ::ConstPtr source_, target_;
+        virtual void ClusteringCallBack() {};
+        
 
         //parameter & node handle stuffs
         protected: 
@@ -46,6 +49,16 @@ namespace bnerf {
 
         void SetEstimation(const SE3d &);
         void AccumulateHessian(State::ConstPtr);
+
+
+        //clustering stuffs
+        protected: 
+        vector<Eigen::Index> labels_;
+        Eigen::Matrix<double, 6, 13> kmeans_;
+        int k_;
+        vector<double> preds_;
+       
+        void ConvexClustering();
     };
 }
 

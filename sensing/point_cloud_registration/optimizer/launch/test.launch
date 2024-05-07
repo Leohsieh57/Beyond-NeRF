@@ -46,6 +46,4 @@
 		<remap from="~/input_scan" to="/voxel_grid_filter_node/filtered_points"/>
     </node>
 
-	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find optimizer)/rviz/test.rviz" />
-
 </launch>
