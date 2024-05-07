@@ -16,8 +16,6 @@ namespace bnerf
         vector<double> chi2s_;
         vector<int> valid_ids_;
         vector<Voxel::ConstPtr> voxels_;
-
-        int GetValidIds(const int &);
         
         typedef shared_ptr<State> Ptr;
         typedef shared_ptr<const State> ConstPtr;

@@ -13,22 +13,22 @@ namespace bnerf {
     }
 
 
-    Voxelizer::Ptr Voxelizer::CreatePtr(const string &ns) {
-        ros::NodeHandle nh(ns);
-        Voxelizer::Ptr voxer;
+    // Voxelizer::Ptr Voxelizer::CreatePtr(const string &ns) {
+    //     ros::NodeHandle nh(ns);
+    //     Voxelizer::Ptr voxer;
 
-        string solver;
-        GET_REQUIRED(nh, "solver", solver);
-        if (solver == "ndt")
-            voxer.reset(new NdtVoxelizer(nh));
-        else if (solver == "gicp")
-            voxer.reset(new GicpVoxelizer(nh));
+    //     string solver;
+    //     GET_REQUIRED(nh, "solver", solver);
+    //     if (solver == "ndt")
+    //         voxer.reset(new NdtVoxelizer(nh));
+    //     else if (solver == "gicp")
+    //         voxer.reset(new GicpVoxelizer(nh));
 
-        LOG_ASSERT(voxer) << endl << "unknown solver \""
-            << solver << "\" specified, aborting.. ";
+    //     LOG_ASSERT(voxer) << endl << "unknown solver \""
+    //         << solver << "\" specified, aborting.. ";
 
-        return voxer;
-    }
+    //     return voxer;
+    // }
 
 
     void Voxelizer::SetInputTarget(CloudXYZ::ConstPtr target) {
@@ -128,5 +128,17 @@ namespace bnerf {
         Vec3d diags = evals.cwiseInverse().normalized();
         H = evecs * diags.asDiagonal() * evecs.transpose();
         return vox;
+    }
+
+
+    const int & Voxelizer::GetNumThreads() const 
+    {
+        return threads_;
+    }
+
+
+    CloudXYZ::ConstPtr Voxelizer::GetInputTarget() const
+    {
+        return target_;
     }
 }

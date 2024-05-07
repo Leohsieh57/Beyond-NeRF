@@ -1,7 +1,7 @@
 #include <glog/logging.h>
 #include <bnerf_utils/conversions.h>
 #include <omp.h>
-#include <scan_matcher/data.h>
+#include <scan_matcher/optim_data.h>
 
 
 namespace bnerf
@@ -12,13 +12,12 @@ initializer(omp_priv=Mat66d::Zero())
 #pragma omp declare reduction(+:Vec6d: omp_out+=omp_in) \
 initializer(omp_priv=Vec6d::Zero())
 
-    Data::Data(Voxelizer::Ptr voxer, 
-        CloudXYZ::ConstPtr source, const int & threads)
+    OptimData::OptimData(Voxelizer::Ptr voxer, CloudXYZ::ConstPtr source)
         : best_(new State)
         , temp_(new State)
         , voxer_(voxer)
         , source_(source)
-        , threads_(threads)
+        , threads_(voxer->GetNumThreads())
         , penalty_(voxer->GetPenalty())
     {
         LOG_ASSERT(source);
@@ -37,7 +36,7 @@ initializer(omp_priv=Vec6d::Zero())
     }
 
 
-    void Data::AccumulateHessian(State::ConstPtr st)
+    void OptimData::AccumulateHessian(State::ConstPtr st)
     {
         b_.setZero();
         H_.setZero();
@@ -61,7 +60,7 @@ initializer(omp_priv=Vec6d::Zero())
     }
 
 
-    void Data::SetEstimation(const SE3d & trans)
+    void OptimData::SetEstimation(const SE3d & trans)
     {
         temp_->trans_ = trans;
         double &loss = temp_->loss_ = 0;
@@ -82,7 +81,48 @@ initializer(omp_priv=Vec6d::Zero())
             loss += chi2 = res.dot(vox->info_ * res);
         }
 
-        int invalids = source_->size() - temp_->GetValidIds(threads_);
+        int invalids = source_->size() - GetValidIds(temp_);
         loss += invalids * penalty_;
+    }
+
+
+    int OptimData::GetValidIds(State::Ptr st) const 
+    {
+        int valids = 0;
+        #pragma omp parallel for num_threads(threads_) reduction(+:valids)
+        for (const auto &vox : st->voxels_)
+            valids += bool(vox);
+
+        vector<int> omp_ids[threads_];
+        #pragma omp parallel for num_threads(threads_)
+        for (auto &ids : omp_ids)
+            ids.reserve(valids);
+
+        #pragma omp parallel for num_threads(threads_)
+        for (size_t i = 0; i < st->voxels_.size(); i++) 
+            if (st->voxels_[i])
+                omp_ids[omp_get_thread_num()].push_back(i);
+
+        for (auto &ids : omp_ids) 
+            if (omp_ids->size() < ids.size())
+                omp_ids->swap(ids);
+
+        vector<int> shifts = {0};
+        shifts.reserve(threads_ + 1);
+        for (const auto &ids : omp_ids)
+            shifts.push_back(shifts.back() + ids.size());
+
+        //reconstruct valid_ids
+        omp_ids->resize(valids);
+        omp_ids->swap(st->valid_ids_);
+        
+        #pragma omp parallel for num_threads(threads_)
+        for (int i = 1; i < threads_; i++) {
+            auto &ids = omp_ids[i];
+            auto ibegin = st->valid_ids_.begin();
+            copy(ids.begin(), ids.end(), ibegin + shifts[i]);
+        }
+
+        return valids;
     }
 }

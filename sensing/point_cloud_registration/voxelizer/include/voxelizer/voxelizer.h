@@ -13,8 +13,10 @@ namespace bnerf {
         public: 
         Voxelizer(ros::NodeHandle &);
         void SetInputTarget(CloudXYZ::ConstPtr);
+        CloudXYZ::ConstPtr GetInputTarget() const;
         
         public:
+        const int & GetNumThreads() const;
         virtual double GetPenalty() const = 0;
         virtual Voxel::ConstPtr GetVoxel(const Vec3d &) const = 0;
 
@@ -37,7 +39,6 @@ namespace bnerf {
 
         public:
         typedef shared_ptr<Voxelizer> Ptr;
-        static Ptr CreatePtr(const string &ns = "voxelizer");
     };
 }
 

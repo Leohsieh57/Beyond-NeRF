@@ -1,5 +1,5 @@
-#ifndef __BNERF_OPTIMIZER_DATA_H__
-#define __BNERF_OPTIMIZER_DATA_H__
+#ifndef __BNERF_OPTIM_DATA_H__
+#define __BNERF_OPTIM_DATA_H__
 
 
 #include <bnerf_utils/typedef.h>
@@ -9,9 +9,9 @@
 
 namespace bnerf
 {
-    struct Data
+    struct OptimData
     {
-        Data(Voxelizer::Ptr, CloudXYZ::ConstPtr, const int &);
+        OptimData(Voxelizer::Ptr, CloudXYZ::ConstPtr);
 
         State::Ptr best_, temp_;
         Voxelizer::Ptr voxer_;
@@ -28,6 +28,7 @@ namespace bnerf
 
         void SetEstimation(const SE3d &);
         void AccumulateHessian(State::ConstPtr);
+        int GetValidIds(State::Ptr) const;
     };
 }
 
