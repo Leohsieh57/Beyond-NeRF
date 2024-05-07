@@ -3,7 +3,6 @@
 #include <scan_matcher/scan_matcher.h>
 #include <voxelizer/voxelizer_ndt.h>
 #include <voxelizer/voxelizer_gicp.h>
-#include <bnerf_msgs/GraphBinaryEdge.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/transforms.h>
@@ -67,13 +66,37 @@ namespace bnerf
             data.SetEstimation(eps * data.best_->trans_);
         }
 
-        PublishBinaryEdge(data);
+        edge_pub_.publish(GetBinaryEdge(data));
+
         if (viz_pub_)
-            VisualizeAlignment(data);
+            viz_pub_->publish(GetCombinedScan(data));
     }
 
 
-    void ScanMatcher::PublishBinaryEdge(const OptimData & data)
+    CloudXYZI ScanMatcher::GetCombinedScan(
+        const OptimData & data) const
+    {
+        LOG_ASSERT(viz_pub_);
+        const auto target = data.voxer_->GetInputTarget();
+        Mat44f trans = data.best_->trans_.matrix().cast<float>();
+
+        
+        CloudXYZ source;
+        pcl::transformPointCloud(*data.source_, source, trans);
+        const size_t num_source = source.size();
+
+        CloudXYZI msg;
+        pcl::copyPointCloud(source += *target, msg);
+        for (size_t i = 0; i < msg.size(); i++)
+            msg[i].intensity = i < num_source;
+
+        msg.header = data.source_->header;
+        return msg;
+    }
+
+
+    bnerf_msgs::GraphBinaryEdge ScanMatcher::GetBinaryEdge(
+        const OptimData & data) const
     {
         const auto target = data.voxer_->GetInputTarget();
         const auto source = data.source_;
@@ -97,33 +120,7 @@ namespace bnerf
         const Mat66d cov = evecs.transpose() * evals.asDiagonal() * evecs;
         copy_n(cov.data(), 36, msg.covariance.data());
 
-        edge_pub_.publish(msg);
-    }
-
-
-    void ScanMatcher::VisualizeAlignment(const OptimData & data)
-    {
-        const auto target = data.voxer_->GetInputTarget();
-        Mat44f trans = data.best_->trans_.matrix().cast<float>();
-
-        
-        CloudXYZ source;
-        pcl::transformPointCloud(*data.source_, source, trans);
-        const size_t num_source = source.size();
-
-        CloudXYZI msg;
-        pcl::copyPointCloud(source += *target, msg);
-        for (size_t i = 0; i < msg.size(); i++)
-            msg[i].intensity = i < num_source;
-
-        msg.header = data.source_->header;
-        viz_pub_->publish(msg);
-    }
-
-
-    void ScanMatcher::SetupVisualizer() 
-    {
-        
+        return msg;
     }
 
 

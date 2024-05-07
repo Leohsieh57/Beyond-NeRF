@@ -6,6 +6,7 @@
 #include <voxelizer/voxelizer.h>
 #include <scan_matcher/optim_data.h>
 #include <bnerf_utils/bnerf_utils.h>
+#include <bnerf_msgs/GraphBinaryEdge.h>
 
 
 namespace bnerf
@@ -21,9 +22,9 @@ namespace bnerf
 
         private:
         Voxelizer::Ptr GetVoxelizer();
-        void SetupVisualizer();
-        void PublishBinaryEdge(const OptimData &);
-        void VisualizeAlignment(const OptimData &);
+        CloudXYZI GetCombinedScan(const OptimData &) const;
+        bnerf_msgs::GraphBinaryEdge GetBinaryEdge(const OptimData &) const;
+        
 
         //registrator stuffs
         private:

@@ -9,13 +9,13 @@
     
     <arg name="solver" default="ndt"/>
     <node pkg="scan_matcher" type="scan_matcher_node" name="scan_matcher_node" output="screen">
-        <rosparam param="voxel_leaves">[2, 2, 2]</rosparam>
+        <param name="leaf_size" type="double" value="2" />
         <param name="accum_knn" type="int" value="20" />
 		<param name="accum_radius" type="double" value="1" />
 		<param name="match_radius" type="double" value="4" />
         <param name="epsilon" type="double" value="4e-4" />
-        <param name="min_points" type="int" value="4" />
-		<param name="num_threads" type="int" value="4" />
+        <param name="min_points" type="int" value="6" />
+		<param name="num_threads" type="int" value="6" />
         <param name="visualize" type="bool" value="true" />
 		<param name="max_iters" type="int" value="256" />
 		<param name="solver" type="string" value="$(arg solver)" />

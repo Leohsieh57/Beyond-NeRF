@@ -6,11 +6,10 @@ namespace bnerf {
     VoxelizerNDT::VoxelizerNDT(ros::NodeHandle &nh)
         : Voxelizer(nh)
     {
-        vector<double> leaf;
-        GET_REQUIRED(nh, "voxel_leaves", leaf);
-        LOG_ASSERT(leaf.size() == 3);
-
-        copy(leaf.begin(), leaf.end(), leaf_.data());
+        double leaf;
+        GET_REQUIRED(nh, "leaf_size", leaf);
+        
+        leaf_.fill(leaf);
         LOG_ASSERT((leaf_.array() > 0).all());
 
         ileaf_ = leaf_.cwiseInverse();
