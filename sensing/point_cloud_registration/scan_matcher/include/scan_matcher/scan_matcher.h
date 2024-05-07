@@ -21,6 +21,7 @@ namespace bnerf
 
         private:
         Voxelizer::Ptr GetVoxelizer();
+        void SetupVisualizer();
         void PublishBinaryEdge(const OptimData &);
         void VisualizeAlignment(const OptimData &);
 
@@ -43,8 +44,7 @@ namespace bnerf
 
         //visualization stuff
         private:
-        unique_ptr<ros::Publisher> src_pub_;
-        unique_ptr<ros::Publisher> tgt_pub_;
+        unique_ptr<ros::Publisher> viz_pub_;
     };
 }
 

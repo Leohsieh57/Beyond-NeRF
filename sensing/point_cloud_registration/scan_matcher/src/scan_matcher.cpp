@@ -25,20 +25,17 @@ namespace bnerf
         if (!use_gicp_)
             LOG_ASSERT(solver == "ndt");
 
-        edge_pub_ = nh_.advertise<bnerf_msgs::GraphBinaryEdge>("regist_binary_edge", 128);
-        
         bool visualize;
         GET_OPTIONAL(nh_, "visualize", visualize, false);
         if (visualize)
         {
-            src_pub_.reset(new ros::Publisher());
-            tgt_pub_.reset(new ros::Publisher);
-            *src_pub_ = nh_.advertise<CloudXYZ>("source_scan_matched", 128);
-            *tgt_pub_ = nh_.advertise<CloudXYZ>("target_scan_matched", 128);
+            auto viz_pub = nh_.advertise<CloudXYZI>("combined_scan", 64);
+            viz_pub_.reset(new ros::Publisher(move(viz_pub)));
         }
 
-        src_sub_ = nh_.subscribe("source_scan", 8, &ScanMatcher::SourceScanCallBack, this);
-        tgt_sub_ = nh_.subscribe("target_scan", 8, &ScanMatcher::TargetScanCallBack, this);
+        edge_pub_= nh_.advertise<bnerf_msgs::GraphBinaryEdge>("regist_binary_edge", 64);
+        src_sub_ = nh_.subscribe("source_scan", 64, &ScanMatcher::SourceScanCallBack, this);
+        tgt_sub_ = nh_.subscribe("target_scan", 64, &ScanMatcher::TargetScanCallBack, this);
     }
 
 
@@ -71,7 +68,7 @@ namespace bnerf
         }
 
         PublishBinaryEdge(data);
-        if (tgt_pub_)
+        if (viz_pub_)
             VisualizeAlignment(data);
     }
 
@@ -82,8 +79,8 @@ namespace bnerf
         const auto source = data.source_;
 
         bnerf_msgs::GraphBinaryEdge msg;
-        pcl_conversions::fromPCL(target->header.stamp, msg.stamp1);
-        pcl_conversions::fromPCL(source->header.stamp, msg.stamp2);
+        pcl_conversions::fromPCL(target->header, msg.header1);
+        pcl_conversions::fromPCL(source->header, msg.header2);
 
         msg.type = bnerf_msgs::GraphBinaryEdge::LIDAR_TO_LIDAR;
         convert(data.best_->trans_, msg.transform);
@@ -109,11 +106,24 @@ namespace bnerf
         const auto target = data.voxer_->GetInputTarget();
         Mat44f trans = data.best_->trans_.matrix().cast<float>();
 
+        
         CloudXYZ source;
         pcl::transformPointCloud(*data.source_, source, trans);
-        source.header = target->header;
-        src_pub_->publish(source);
-        tgt_pub_->publish(*target);
+        const size_t num_source = source.size();
+
+        CloudXYZI msg;
+        pcl::copyPointCloud(source += *target, msg);
+        for (size_t i = 0; i < msg.size(); i++)
+            msg[i].intensity = i < num_source;
+
+        msg.header = data.source_->header;
+        viz_pub_->publish(msg);
+    }
+
+
+    void ScanMatcher::SetupVisualizer() 
+    {
+        
     }
 
 
@@ -122,7 +132,6 @@ namespace bnerf
         lock_guard<mutex> lock(vox_mutex_);
         return voxer_;
     }
-
 
 
     void ScanMatcher::TargetScanCallBack(const CloudXYZ::ConstPtr & target)
