@@ -27,7 +27,7 @@ namespace bnerf {
 
         auto ids = ileaf_.cwiseProduct(pt - box_min_).cast<int>();
         uint vid = shifts_.tail<3>().dot(ids);
-        LOG_ASSERT(vid < voxels_.size()) << endl << vid << "\t" << voxels_.size();
+        LOG_ASSERT(vid < voxels_.size());
         return voxels_[vid];
     }
 

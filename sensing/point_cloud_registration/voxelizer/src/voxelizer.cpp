@@ -14,7 +14,7 @@ namespace bnerf {
     void Voxelizer::SetInputTarget(CloudXYZ::ConstPtr target) {
         LOG_ASSERT(target_ = target);
         const auto vol = ComputeVolume();
-        LOG_ASSERT(vol > 0) << endl << vol;
+        LOG_ASSERT(vol > 0);
 
         Array<int> counts;
         Array<double> accums;
