@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-    <name>optimizer</name>
+    <name>scan_matcher</name>
     <version>0.0.0</version>
-    <description>optimizer</description>
+    <description>scan_matcher</description>
     <maintainer email="bardiche4768@todo.todo">bardiche4768</maintainer>
 
     <license>TODO</license>
