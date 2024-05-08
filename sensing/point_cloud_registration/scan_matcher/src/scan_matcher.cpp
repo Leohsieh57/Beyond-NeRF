@@ -24,6 +24,10 @@ namespace bnerf
         if (!use_gicp_)
             LOG_ASSERT(solver == "ndt");
 
+        double tgt_timeout;
+        GET_REQUIRED(nh_, "target_timeout", tgt_timeout);
+        tgt_timeout_.fromSec(tgt_timeout);
+
         bool visualize;
         GET_OPTIONAL(nh_, "visualize", visualize, false);
         if (visualize)
@@ -40,25 +44,17 @@ namespace bnerf
 
     void ScanMatcher::SourceScanCallBack(const CloudXYZ::ConstPtr & source)
     {
-        LOG(INFO) << "aaaaa" << endl;
-        const auto voxer = GetVoxelizer();
-        LOG(INFO) << "aaaaa" << endl;
+        const auto voxer = GetVoxelizer(source);
         if (!voxer)
             return;
 
-        LOG(INFO) << "aaaaa" << endl;
         const auto target = voxer->GetInputTarget();
-        LOG(INFO) << "aaaaa" << endl;
         if (target->header.stamp == source->header.stamp)
             return;
-
-        LOG(INFO) << "aaaaa" << endl;
 
         SE3d init_guess;
         OptimData data(voxer, source);
         data.SetEstimation(init_guess);
-
-        LOG(INFO) << "aaaaa" << endl;
 
         for (int i = 0; ros::ok() && i < max_iters_; i++)
         {
@@ -74,16 +70,10 @@ namespace bnerf
             data.SetEstimation(eps * data.best_->trans_);
         }
 
-        LOG(INFO) << "aaaaa" << endl;
-
         edge_pub_.publish(GetBinaryEdge(data));
-
-        LOG(INFO) << "aaaaa" << endl;
-
         if (viz_pub_)
             viz_pub_->publish(GetCombinedScan(data));
 
-        LOG(INFO) << "aaaaa" << endl;
     }
 
 
@@ -136,10 +126,30 @@ namespace bnerf
     }
 
 
-    Voxelizer::Ptr ScanMatcher::GetVoxelizer()
+    Voxelizer::Ptr ScanMatcher::GetVoxelizer(CloudXYZ::ConstPtr source)
     {
+        ros::Time t2;
+        pcl_conversions::fromPCL(source->header.stamp, t2);
+
+        Voxelizer::Ptr best_voxer;
+        double best_secs = numeric_limits<double>::max();
+
         lock_guard<mutex> lock(vox_mutex_);
-        return voxer_;
+        for (const auto & voxer: voxers_)
+        {
+            const auto t1 = voxer->GetStamp();
+            if (t1 == t2)
+                continue;
+
+            const double secs = abs((t2-t1).toSec());
+            if (secs < best_secs)
+            {
+                best_secs = secs;
+                best_voxer = voxer;
+            }
+        }
+
+        return best_voxer;
     }
 
 
@@ -154,7 +164,12 @@ namespace bnerf
             voxer.reset(new VoxelizerNDT(nh_));
 
         voxer->SetInputTarget(target);
+        auto t = voxer->GetStamp() - tgt_timeout_;
+        auto timeout = [&t](Voxelizer::Ptr vox) {return vox->GetStamp() < t; };
+
         lock_guard<mutex> lock(vox_mutex_);
-        voxer_ = voxer;
+        const auto iend = remove_if(voxers_.begin(), voxers_.end(), timeout);
+        voxers_.erase(iend, voxers_.end());
+        voxers_.push_back(voxer);
     }
 }

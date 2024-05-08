@@ -14,6 +14,7 @@ namespace bnerf {
         Voxelizer(ros::NodeHandle &);
         void SetInputTarget(CloudXYZ::ConstPtr);
         CloudXYZ::ConstPtr GetInputTarget() const;
+        ros::Time GetStamp() const;
         
         public:
         const int & GetNumThreads() const;

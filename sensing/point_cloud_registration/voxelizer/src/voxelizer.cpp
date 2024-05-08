@@ -125,4 +125,12 @@ namespace bnerf {
     {
         return target_;
     }
+    
+
+    ros::Time Voxelizer::GetStamp() const
+    {
+        ros::Time stamp;
+        pcl_conversions::fromPCL(target_->header.stamp, stamp);
+        return stamp;
+    }
 }

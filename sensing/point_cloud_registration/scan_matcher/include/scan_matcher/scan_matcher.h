@@ -21,7 +21,7 @@ namespace bnerf
         void TargetScanCallBack(const CloudXYZ::ConstPtr &);
 
         private:
-        Voxelizer::Ptr GetVoxelizer();
+        Voxelizer::Ptr GetVoxelizer(CloudXYZ::ConstPtr);
         CloudXYZI GetCombinedScan(const OptimData &) const;
         bnerf_msgs::GraphBinaryEdge GetBinaryEdge(const OptimData &) const;
         
@@ -30,13 +30,14 @@ namespace bnerf
         private:
         ros::NodeHandle nh_;
         mutex vox_mutex_;
-        Voxelizer::Ptr voxer_;
+        vector<Voxelizer::Ptr> voxers_;
 
         //parameter & node handle stuffs
         private:
         bool use_gicp_;
         double epsilon_;
         int max_iters_;
+        ros::Duration tgt_timeout_;
 
         //ros stuff
         ros::Publisher edge_pub_;
