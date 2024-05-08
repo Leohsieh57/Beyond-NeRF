@@ -28,29 +28,37 @@ namespace bnerf
         GET_OPTIONAL(nh_, "visualize", visualize, false);
         if (visualize)
         {
-            auto viz_pub = nh_.advertise<CloudXYZI>("combined_scan", 64);
+            auto viz_pub = nh_.advertise<CloudXYZI>("combined_scan", 1);
             viz_pub_.reset(new ros::Publisher(move(viz_pub)));
         }
 
-        edge_pub_= nh_.advertise<bnerf_msgs::GraphBinaryEdge>("regist_binary_edge", 64);
-        src_sub_ = nh_.subscribe("source_scan", 64, &ScanMatcher::SourceScanCallBack, this);
-        tgt_sub_ = nh_.subscribe("target_scan", 64, &ScanMatcher::TargetScanCallBack, this);
+        edge_pub_= nh_.advertise<bnerf_msgs::GraphBinaryEdge>("regist_binary_edge", 16);
+        src_sub_ = nh_.subscribe("source_scan", 16, &ScanMatcher::SourceScanCallBack, this);
+        tgt_sub_ = nh_.subscribe("target_scan", 16, &ScanMatcher::TargetScanCallBack, this);
     }
 
 
     void ScanMatcher::SourceScanCallBack(const CloudXYZ::ConstPtr & source)
     {
+        LOG(INFO) << "aaaaa" << endl;
         const auto voxer = GetVoxelizer();
+        LOG(INFO) << "aaaaa" << endl;
         if (!voxer)
             return;
 
+        LOG(INFO) << "aaaaa" << endl;
         const auto target = voxer->GetInputTarget();
+        LOG(INFO) << "aaaaa" << endl;
         if (target->header.stamp == source->header.stamp)
             return;
+
+        LOG(INFO) << "aaaaa" << endl;
 
         SE3d init_guess;
         OptimData data(voxer, source);
         data.SetEstimation(init_guess);
+
+        LOG(INFO) << "aaaaa" << endl;
 
         for (int i = 0; ros::ok() && i < max_iters_; i++)
         {
@@ -66,10 +74,16 @@ namespace bnerf
             data.SetEstimation(eps * data.best_->trans_);
         }
 
+        LOG(INFO) << "aaaaa" << endl;
+
         edge_pub_.publish(GetBinaryEdge(data));
+
+        LOG(INFO) << "aaaaa" << endl;
 
         if (viz_pub_)
             viz_pub_->publish(GetCombinedScan(data));
+
+        LOG(INFO) << "aaaaa" << endl;
     }
 
 
@@ -104,8 +118,6 @@ namespace bnerf
         bnerf_msgs::GraphBinaryEdge msg;
         pcl_conversions::fromPCL(target->header, msg.header1);
         pcl_conversions::fromPCL(source->header, msg.header2);
-
-        msg.type = bnerf_msgs::GraphBinaryEdge::LIDAR_TO_LIDAR;
         convert(data.best_->trans_, msg.transform);
 
         Eigen::SelfAdjointEigenSolver<Mat66d> solver;
