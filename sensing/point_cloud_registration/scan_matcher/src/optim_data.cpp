@@ -12,7 +12,7 @@ initializer(omp_priv=Mat66d::Zero())
 #pragma omp declare reduction(+:Vec6d: omp_out+=omp_in) \
 initializer(omp_priv=Vec6d::Zero())
 
-    OptimData::OptimData(Voxelizer::Ptr voxer, CloudXYZ::ConstPtr source)
+    OptimData::OptimData(Voxelizer::ConstPtr voxer, CloudXYZ::ConstPtr source)
         : best_(new State)
         , temp_(new State)
         , voxer_(voxer)

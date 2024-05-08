@@ -15,16 +15,12 @@ namespace bnerf {
         LOG_ASSERT(target_ = target);
         const auto vol = ComputeVolume();
         LOG_ASSERT(vol > 0);
+        voxels_.assign(vol, nullptr);
 
-        Array<int> counts;
-        Array<double> accums;
-        Array<vector<int>> accum_ids;
+        vector<int> counts(size_t(vol) * threads_, 0);
+        vector<double> accums(size_t(vol) * strides_);
+        vector<vector<int>> accum_ids(target->size());
 
-        voxels_.resize(vol);
-        accums.resize(size_t(vol) * strides_);
-        counts.assign(size_t(vol) * threads_, 0);
-
-        accum_ids.resize(target->size());
         #pragma omp parallel for num_threads(threads_)
         for (size_t i = 0; i < target_->size(); i++) {
             auto &ids = accum_ids[i];
@@ -37,7 +33,7 @@ namespace bnerf {
 
         #pragma omp parallel for num_threads(threads_)
         for (int vid = 0; vid < vol; vid++) {
-            int *data = counts + vid;
+            int *data = counts.data() + vid;
             for (int i = 1; i < threads_; i++) 
                 counts[vid] += *(data += vol);
         }
@@ -46,7 +42,7 @@ namespace bnerf {
             return counts[vid] < min_pts_; };
             
         auto get_acc = [this, & accums](const size_t &vid) {
-            return accums + vid * strides_; };
+            return accums.data() + vid * strides_; };
             
         #pragma omp parallel for num_threads(threads_)
         for (int vid = 0; vid < vol; vid++) 
@@ -77,10 +73,8 @@ namespace bnerf {
 
         #pragma omp parallel for num_threads(threads_)
         for (int vid = 0; vid < vol; vid++) {
-            if (invalid(vid)) {
-                voxels_[vid] = nullptr;
+            if (invalid(vid)) 
                 continue;
-            }
 
             double *data = get_acc(vid);
             Eigen::Map<Mat34d> acc(data);

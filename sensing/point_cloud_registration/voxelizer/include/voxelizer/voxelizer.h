@@ -5,7 +5,6 @@
 #include <bnerf_utils/bnerf_utils.h>
 #include <bnerf_utils/conversions.h>
 #include <voxelizer/voxel.h>
-#include <voxelizer/array.hpp>
 
 
 namespace bnerf {
@@ -29,7 +28,7 @@ namespace bnerf {
         protected:
         int threads_;
         CloudXYZ::ConstPtr target_;
-        Array<Voxel::ConstPtr> voxels_;
+        vector<Voxel::ConstPtr> voxels_;
 
         private:
         int min_pts_, strides_;
@@ -37,6 +36,7 @@ namespace bnerf {
 
         public:
         typedef shared_ptr<Voxelizer> Ptr;
+        typedef shared_ptr<const Voxelizer> ConstPtr;
     };
 }
 

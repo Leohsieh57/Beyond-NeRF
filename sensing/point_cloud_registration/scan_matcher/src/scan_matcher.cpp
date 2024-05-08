@@ -68,6 +68,8 @@ namespace bnerf
 
             SE3d eps = SE3d::exp(inc);
             data.SetEstimation(eps * data.best_->trans_);
+            // if (data.best_->loss_ <= data.temp_->loss_)
+            //     break;
         }
 
         edge_pub_.publish(GetBinaryEdge(data));
@@ -114,7 +116,7 @@ namespace bnerf
         solver.compute(data.H_);
 
         Vec6d evals = solver.eigenvalues();
-        evals = evals.cwiseMax(1e-3);
+        evals = evals.cwiseMax(1e-8);
         LOG_ASSERT((evals.array() > 0).all());
         evals.normalize();
 
@@ -126,12 +128,12 @@ namespace bnerf
     }
 
 
-    Voxelizer::Ptr ScanMatcher::GetVoxelizer(CloudXYZ::ConstPtr source)
+    Voxelizer::ConstPtr ScanMatcher::GetVoxelizer(CloudXYZ::ConstPtr source)
     {
         ros::Time t2;
         pcl_conversions::fromPCL(source->header.stamp, t2);
 
-        Voxelizer::Ptr best_voxer;
+        Voxelizer::ConstPtr best_voxer;
         double best_secs = numeric_limits<double>::max();
 
         lock_guard<mutex> lock(vox_mutex_);
@@ -165,7 +167,7 @@ namespace bnerf
 
         voxer->SetInputTarget(target);
         auto t = voxer->GetStamp() - tgt_timeout_;
-        auto timeout = [&t](Voxelizer::Ptr vox) {return vox->GetStamp() < t; };
+        auto timeout = [&t](Voxelizer::ConstPtr vox) {return vox->GetStamp() < t; };
 
         lock_guard<mutex> lock(vox_mutex_);
         const auto iend = remove_if(voxers_.begin(), voxers_.end(), timeout);

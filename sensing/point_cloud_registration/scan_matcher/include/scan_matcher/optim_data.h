@@ -11,10 +11,10 @@ namespace bnerf
 {
     struct OptimData
     {
-        OptimData(Voxelizer::Ptr, CloudXYZ::ConstPtr);
+        OptimData(Voxelizer::ConstPtr, CloudXYZ::ConstPtr);
 
         State::Ptr best_, temp_;
-        Voxelizer::Ptr voxer_;
+        Voxelizer::ConstPtr voxer_;
         CloudXYZ::ConstPtr source_;
         int threads_;
         double penalty_;
