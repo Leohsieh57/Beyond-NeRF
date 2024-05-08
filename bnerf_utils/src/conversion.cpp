@@ -113,6 +113,12 @@ namespace bnerf {
         tf::transformMsgToEigen(msg, output);
         return trans = output.matrix().cast<float>();
     }
+    
+
+    Mat44f & convert(const SE3d & trans, Mat44f & mat)
+    {
+        return mat = trans.matrix().cast<float>();
+    }
 
     
     geometry_msgs::Pose & convert(

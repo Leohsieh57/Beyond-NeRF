@@ -85,7 +85,7 @@ namespace bnerf
     {
         LOG_ASSERT(viz_pub_);
         const auto target = optim.voxer_->GetInputTarget();
-        Mat44f trans = optim.trans_.matrix().cast<float>();
+        const auto trans = convert<Mat44f>(optim.trans_);
         
         CloudXYZ source;
         pcl::transformPointCloud(*optim.source_, source, trans);

@@ -13,7 +13,8 @@ namespace bnerf {
     }
 
 
-    double VoxelizerGICP::GetPenalty() const {
+    double VoxelizerGICP::GetPenalty() const
+    {
         return match_radi_ * match_radi_;
     }
 
@@ -45,7 +46,8 @@ namespace bnerf {
     // }
 
 
-    void VoxelizerGICP::SetInputCallBack() {
+    void VoxelizerGICP::SetInputCallBack()
+    {
         const size_t &vol = voxels_.size();
 
         size_t valids = 0;
@@ -60,7 +62,8 @@ namespace bnerf {
             voxels.reserve(valids);
 
         #pragma omp parallel for num_threads(threads_)
-        for (size_t i = 0; i < vol; i++) {
+        for (size_t i = 0; i < vol; i++)
+        {
             const auto &vox = voxels_[i];
             if (!vox)
                 continue;
@@ -82,7 +85,8 @@ namespace bnerf {
         valids_.resize(shifts.back());
         
         #pragma omp parallel for num_threads(threads_)
-        for (int i = 1; i < threads_; i++) {
+        for (int i = 1; i < threads_; i++)
+        {
             auto &voxels = omp_voxels[i];
             auto ibegin = valids_.begin() + shifts[i];
             move(voxels.begin(), voxels.end(), ibegin);
@@ -92,7 +96,8 @@ namespace bnerf {
         centroids->resize(valids);
         
         #pragma omp parallel for num_threads(threads_)
-        for (size_t i = 0; i < valids; i++) {
+        for (size_t i = 0; i < valids; i++)
+        {
             const auto &vox = valids_[i];
             LOG_ASSERT(vox);
 

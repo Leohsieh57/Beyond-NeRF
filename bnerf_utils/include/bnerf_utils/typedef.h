@@ -44,6 +44,7 @@ namespace bnerf {
     typedef Eigen::Matrix<double, 7, 7> Mat77d;
     typedef Eigen::Matrix<double, 7, 3> Mat73d;
     typedef Eigen::Matrix<double, 6, 3> Mat63d;
+    typedef Eigen::Matrix<double, 3, 6> Mat36d;
     typedef Eigen::Matrix<double, 6,-1> Mat6Xd;
     typedef Eigen::Matrix<double, 7,-1> Mat7Xd;
     typedef Eigen::Matrix<double, 3,-1> Mat3Xd;

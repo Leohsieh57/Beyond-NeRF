@@ -23,6 +23,7 @@ namespace bnerf {
     geometry_msgs::Transform & convert(const Mat44f &, geometry_msgs::Transform &);
 
     Mat44f & convert(const geometry_msgs::Transform &, Mat44f &);
+    Mat44f & convert(const SE3d &, Mat44f &);
 
     geometry_msgs::Point & convert(const Vec3d &, geometry_msgs::Point &);
     geometry_msgs::Point & convert(const PointXYZ &, geometry_msgs::Point &);
@@ -32,7 +33,8 @@ namespace bnerf {
     Vec3d & convert(const geometry_msgs::Point &, Vec3d&);
 
     template<typename O, typename I> 
-    O convert(const I &input) {
+    O convert(const I &input) 
+    {
         O output;
         return convert(input, output);
     }

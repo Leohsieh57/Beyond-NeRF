@@ -36,16 +36,16 @@ initializer(omp_priv=Vec6d::Zero())
             const auto &voxels = voxels_[pid];
             LOG_ASSERT(!voxels.empty());
 
-            Mat63d jb;
-            jb.topRows<3>().setIdentity();
-            jb.bottomRows<3>() = SO3d::hat(trans_pts_.col(pid));
+            Mat36d jb;
+            jb.leftCols<3>().setIdentity();
+            jb.rightCols<3>() = SO3d::hat(-trans_pts_.col(pid));
 
             auto & res = residuals_[pid];
             for (int rid = 0; rid < res.cols(); rid++)
             {
                 const auto & vox = voxels[rid];
-                b_ += jb * vox->info_ * res.col(rid);
-                H_ += jb * vox->info_ * jb.transpose();
+                b_ += jb.transpose() * vox->info_ * res.col(rid);
+                H_ += jb.transpose() * vox->info_ * jb;
             }
         }
     }

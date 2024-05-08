@@ -22,8 +22,8 @@ namespace bnerf {
 
         protected:
         virtual int ComputeVolume() = 0;
+        virtual void SetInputCallBack();
         virtual void GetAccumIds(const int &, vector<int> &) const = 0;
-        virtual void SetInputCallBack() {};
 
         protected:
         int threads_;

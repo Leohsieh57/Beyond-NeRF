@@ -3,15 +3,18 @@
 #include <omp.h>
 
 
-namespace bnerf {
-    Voxelizer::Voxelizer(ros::NodeHandle &nh) {
+namespace bnerf
+{
+    Voxelizer::Voxelizer(ros::NodeHandle &nh)
+    {
         GET_REQUIRED(nh, "min_points",  min_pts_);
         GET_REQUIRED(nh, "num_threads", threads_);
         strides_ = 12 * threads_;
     }
 
 
-    void Voxelizer::SetInputTarget(CloudXYZ::ConstPtr target) {
+    void Voxelizer::SetInputTarget(CloudXYZ::ConstPtr target)
+    {
         LOG_ASSERT(target_ = target);
         const auto vol = ComputeVolume();
         LOG_ASSERT(vol > 0);
@@ -22,7 +25,8 @@ namespace bnerf {
         vector<vector<int>> accum_ids(target->size());
 
         #pragma omp parallel for num_threads(threads_)
-        for (size_t i = 0; i < target_->size(); i++) {
+        for (size_t i = 0; i < target_->size(); i++)
+        {
             auto &ids = accum_ids[i];
             GetAccumIds(i, ids);
             
@@ -32,7 +36,8 @@ namespace bnerf {
         }
 
         #pragma omp parallel for num_threads(threads_)
-        for (int vid = 0; vid < vol; vid++) {
+        for (int vid = 0; vid < vol; vid++)
+        {
             int *data = counts.data() + vid;
             for (int i = 1; i < threads_; i++) 
                 counts[vid] += *(data += vol);
@@ -50,7 +55,8 @@ namespace bnerf {
                 fill_n(get_acc(vid), strides_, 0);
 
         #pragma omp parallel for num_threads(threads_)
-        for (size_t i = 0; i < target_->size(); i++) {
+        for (size_t i = 0; i < target_->size(); i++)
+        {
             const auto &ids = accum_ids[i];
             if (all_of(ids.begin(), ids.end(), invalid))
                 continue; 
@@ -62,7 +68,8 @@ namespace bnerf {
             acc << b * b.transpose(), b;
 
             const int shift = 12 * omp_get_thread_num();
-            for (const int &vid : ids) {
+            for (const int &vid : ids)
+            {
                 if (invalid(vid))
                     continue;
                 
@@ -72,7 +79,8 @@ namespace bnerf {
         }
 
         #pragma omp parallel for num_threads(threads_)
-        for (int vid = 0; vid < vol; vid++) {
+        for (int vid = 0; vid < vol; vid++)
+        {
             if (invalid(vid)) 
                 continue;
 
@@ -88,8 +96,14 @@ namespace bnerf {
         SetInputCallBack();
     }
 
+    void Voxelizer::SetInputCallBack()
+    {
 
-    Voxel::ConstPtr Voxelizer::CreateVoxel(Eigen::Map<Mat34d> &acc) {
+    }
+
+
+    Voxel::ConstPtr Voxelizer::CreateVoxel(Eigen::Map<Mat34d> &acc)
+    {
         const auto b = acc.rightCols<1>();
         auto H = acc.leftCols<3>() -= b * b.transpose();
 
