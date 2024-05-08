@@ -47,10 +47,6 @@ namespace bnerf
         if (!voxer)
             return;
 
-        const auto target = voxer->GetInputTarget();
-        if (target->header.stamp == source->header.stamp)
-            return;
-
         if (verbose_)
             LOG(WARNING) << "start optim. scan size: " << source->size();
 
@@ -65,7 +61,7 @@ namespace bnerf
             if (verbose_)
                 LOG(INFO) << setprecision(12)
                     << "iteration: " << i
-                    << "\tvalid points: " << optim.valid_ids_.size()
+                    << "\tnum_valids: " << optim.valid_ids_.size()
                     << "\tloss: " << optim.loss_;
 
             Vec6d inc = optim.H_.ldlt().solve(-optim.b_);
@@ -90,7 +86,6 @@ namespace bnerf
         LOG_ASSERT(viz_pub_);
         const auto target = optim.voxer_->GetInputTarget();
         Mat44f trans = optim.trans_.matrix().cast<float>();
-
         
         CloudXYZ source;
         pcl::transformPointCloud(*optim.source_, source, trans);
