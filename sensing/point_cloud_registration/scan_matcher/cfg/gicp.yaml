@@ -1,0 +1,9 @@
+accum_knn: 20
+accum_radius: 1
+match_radius: 4
+
+epsilon: 0.0004
+target_timeout: 0.1
+min_points: 8
+num_threads: 6
+max_iters: 128
