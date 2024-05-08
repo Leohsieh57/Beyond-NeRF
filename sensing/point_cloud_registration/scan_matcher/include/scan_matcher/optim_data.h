@@ -21,10 +21,8 @@ namespace bnerf
 
         Mat66d H_;
         Vec6d  b_;
-        Mat3Xd errors_;
-        Mat6Xd hessis_;
-        Mat6Xd jacobs_;
         Mat3Xd trans_pts_;
+        vector<Mat3Xd> errors_;
 
         void SetEstimation(const SE3d &);
         void AccumulateHessian(State::ConstPtr);

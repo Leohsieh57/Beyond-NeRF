@@ -10,7 +10,7 @@ namespace bnerf {
     class VoxelizerGICP : public Voxelizer {
         public: 
         VoxelizerGICP(ros::NodeHandle &);
-        Voxel::ConstPtr GetVoxel(const Vec3d &) const override;
+        void GetVoxels(const Vec3d &, vector<Voxel::ConstPtr> &) const override;
         
         private: 
         int ComputeVolume() override;

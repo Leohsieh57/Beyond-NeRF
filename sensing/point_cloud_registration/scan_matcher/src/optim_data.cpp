@@ -29,9 +29,7 @@ initializer(omp_priv=Vec6d::Zero())
             st->voxels_.resize(w);
         }
         
-        errors_.conservativeResize(3, w);
-        jacobs_.conservativeResize(6, w);
-        hessis_.conservativeResize(6, w * 6);
+        errors_.resize(w);
         trans_pts_.conservativeResize(3, w);
     }
 
@@ -44,18 +42,20 @@ initializer(omp_priv=Vec6d::Zero())
         #pragma omp parallel for reduction(+:H_) reduction(+:b_) num_threads(threads_)
         for (const int &pid : st->valid_ids_)
         {
-            const auto &vox = st->voxels_[pid];
-            LOG_ASSERT(vox);
+            const auto &voxels = st->voxels_[pid];
+            LOG_ASSERT(!voxels.empty());
 
             Mat63d jb;
             jb.topRows<3>().setIdentity();
             jb.bottomRows<3>() = SO3d::hat(trans_pts_.col(pid));
 
-            auto bi = jacobs_.col(pid);
-            auto Hi = hessis_.middleCols<6>(6 * pid);
-
-            b_ += bi = jb * vox->info_ * errors_.col(pid);
-            H_ += Hi = jb * vox->info_ * jb.transpose();
+            auto & res = errors_.at(pid);
+            for (int rid = 0; rid < res.cols(); rid++)
+            {
+                const auto & vox = voxels.at(rid);
+                b_ += jb * vox->info_ * res.col(rid);
+                H_ += jb * vox->info_ * jb.transpose();
+            }
         }
     }
 
@@ -71,14 +71,24 @@ initializer(omp_priv=Vec6d::Zero())
             auto pt = trans_pts_.col(pid);
             pt = source_->at(pid).getVector3fMap().cast<double>();
 
-            auto &vox = temp_->voxels_[pid];
-            vox = voxer_->GetVoxel(pt = trans * pt);
-            if (!vox) 
+            auto & voxels = temp_->voxels_.at(pid);
+            voxer_->GetVoxels(pt = trans * pt, voxels);
+
+            if (voxels.empty()) 
                 continue;
-            
-            const auto res = errors_.col(pid) = pt - vox->mean_;
-            double &chi2 = temp_->chi2s_[pid];
-            loss += chi2 = res.dot(vox->info_ * res);
+
+            auto & res = errors_.at(pid);
+            res.conservativeResize(3, voxels.size());
+
+            double & chi2 = temp_->chi2s_[pid] = 0;
+            for (int rid = 0; rid < res.cols(); rid++)
+            {
+                const auto & vox = voxels.at(rid);
+                const auto e = res.col(rid) = pt - vox->mean_;
+                chi2 += e.transpose() * vox->info_ * e;
+            }
+
+            loss += chi2;
         }
 
         int invalids = source_->size() - GetValidIds(temp_);
@@ -90,8 +100,9 @@ initializer(omp_priv=Vec6d::Zero())
     {
         int valids = 0;
         #pragma omp parallel for num_threads(threads_) reduction(+:valids)
-        for (const auto &vox : st->voxels_)
-            valids += bool(vox);
+        for (const auto &voxels : st->voxels_)
+            if (!voxels.empty())
+                valids++;
 
         vector<int> omp_ids[threads_];
         #pragma omp parallel for num_threads(threads_)
@@ -100,7 +111,7 @@ initializer(omp_priv=Vec6d::Zero())
 
         #pragma omp parallel for num_threads(threads_)
         for (size_t i = 0; i < st->voxels_.size(); i++) 
-            if (st->voxels_[i])
+            if (!st->voxels_[i].empty())
                 omp_ids[omp_get_thread_num()].push_back(i);
 
         for (auto &ids : omp_ids) 
@@ -117,7 +128,8 @@ initializer(omp_priv=Vec6d::Zero())
         omp_ids->swap(st->valid_ids_);
         
         #pragma omp parallel for num_threads(threads_)
-        for (int i = 1; i < threads_; i++) {
+        for (int i = 1; i < threads_; i++)
+        {
             auto &ids = omp_ids[i];
             auto ibegin = st->valid_ids_.begin();
             copy(ids.begin(), ids.end(), ibegin + shifts[i]);

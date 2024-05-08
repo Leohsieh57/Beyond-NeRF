@@ -18,7 +18,7 @@ namespace bnerf {
         public:
         const int & GetNumThreads() const;
         virtual double GetPenalty() const = 0;
-        virtual Voxel::ConstPtr GetVoxel(const Vec3d &) const = 0;
+        virtual void GetVoxels(const Vec3d &, vector<Voxel::ConstPtr> &) const = 0;
 
         protected:
         virtual int ComputeVolume() = 0;

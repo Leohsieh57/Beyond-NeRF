@@ -14,6 +14,48 @@ namespace bnerf {
 
         ileaf_ = leaf_.cwiseInverse();
         shifts_.setOnes();
+
+        string search;
+        GET_REQUIRED(nh, "neighbor_search", search);
+
+        if (search == "direct1")
+        {
+            neighs_.resize(3, 1);
+            neighs_.setZero();
+        }
+        else if (search == "direct7")
+        {
+            neighs_.resize(3, 7);
+            neighs_.setZero();
+            neighs_.leftCols<3>().diagonal() << -leaf_;
+            neighs_.rightCols<3>().diagonal() << leaf_;
+        }
+        else if (search == "direct27")
+        {
+            int idx = 0;
+            neighs_.resize(3, 27);
+            for (int i = -1; i <= 1; i++)
+                for (int j = -1; j <= 1; j++)
+                    for (int k = -1; k <= 1; k++)
+                        neighs_.col(idx++) = Vec3d(i, j, k).cwiseProduct(leaf_);
+        }
+        else
+            LOG(FATAL) << "\nunknown search method '" 
+                << search << "' specified, aborting.. " << endl;
+        
+    }
+
+
+    void VoxelizerNDT::GetVoxels(const Vec3d & pt, 
+        vector<Voxel::ConstPtr> & voxels) const
+    {
+        voxels.clear();
+        for (int i = 0; i < neighs_.cols(); i++)
+        {
+            const auto voxel = GetVoxel(pt + neighs_.col(i));
+            if (voxel)
+                voxels.push_back(voxel);
+        }
     }
 
 

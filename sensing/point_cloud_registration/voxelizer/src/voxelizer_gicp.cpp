@@ -18,15 +18,31 @@ namespace bnerf {
     }
 
 
-    Voxel::ConstPtr VoxelizerGICP::GetVoxel(const Vec3d &pt) const {
+    void VoxelizerGICP::GetVoxels(const Vec3d & pt, 
+        vector<Voxel::ConstPtr> & voxels) const
+    {
         vector<int> ids;
         vector<float> dists;
 
         const PointXYZ query(pt.x(), pt.y(), pt.z());
         tree_.radiusSearch(query, match_radi_, ids, dists, 1);
 
-        return ids.empty()? nullptr : valids_[ids[0]];
+        if (ids.empty())
+            voxels.clear();
+        else
+            voxels.assign(1, valids_[ids[0]]);
     }
+
+
+    // Voxel::ConstPtr VoxelizerGICP::GetVoxel(const Vec3d &pt) const {
+    //     vector<int> ids;
+    //     vector<float> dists;
+
+    //     const PointXYZ query(pt.x(), pt.y(), pt.z());
+    //     tree_.radiusSearch(query, match_radi_, ids, dists, 1);
+
+    //     return ids.empty()? nullptr : valids_[ids[0]];
+    // }
 
 
     void VoxelizerGICP::SetInputCallBack() {
