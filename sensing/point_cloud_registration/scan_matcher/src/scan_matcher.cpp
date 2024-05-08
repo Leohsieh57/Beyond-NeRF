@@ -60,7 +60,7 @@ namespace bnerf
 
             if (verbose_)
                 LOG(INFO) << setprecision(12)
-                    << "iteration: " << i
+                    << "iter: " << i
                     << "\tnum_valids: " << optim.valid_ids_.size()
                     << "\tloss: " << optim.loss_;
 
