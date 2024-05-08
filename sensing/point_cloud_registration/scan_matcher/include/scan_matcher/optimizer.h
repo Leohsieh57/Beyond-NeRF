@@ -3,30 +3,33 @@
 
 
 #include <bnerf_utils/typedef.h>
-#include <scan_matcher/state.h>
 #include <voxelizer/voxelizer.h>
 
 
 namespace bnerf
 {
-    struct OptimData
+    struct Optimizer
     {
-        OptimData(Voxelizer::ConstPtr, CloudXYZ::ConstPtr);
+        Optimizer(Voxelizer::ConstPtr, CloudXYZ::ConstPtr);
 
-        State::Ptr best_, temp_;
+        SE3d trans_;
         Voxelizer::ConstPtr voxer_;
         CloudXYZ::ConstPtr source_;
+        vector<vector<Voxel::ConstPtr>> voxels_;
+
         int threads_;
-        double penalty_;
 
         Mat66d H_;
         Vec6d  b_;
+        double loss_;
+        vector<double> chi2s_;
         Mat3Xd trans_pts_;
         vector<Mat3Xd> residuals_;
 
+        vector<int> valid_ids_;
         void SetEstimation(const SE3d &);
-        void AccumulateHessian(State::ConstPtr);
-        int GetValidIds(State::Ptr) const;
+        void AccumulateHessian();
+        int GetValidIds();
     };
 }
 

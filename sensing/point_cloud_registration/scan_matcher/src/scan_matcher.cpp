@@ -20,10 +20,8 @@ namespace bnerf
 
         string solver;
         GET_REQUIRED(nh_, "solver", solver);
-
+        LOG_ASSERT(solver == "ndt" || solver == "gicp");
         use_gicp_ = solver == "gicp";
-        if (!use_gicp_)
-            LOG_ASSERT(solver == "ndt");
 
         double tgt_timeout;
         GET_REQUIRED(nh_, "target_timeout", tgt_timeout);
@@ -57,48 +55,45 @@ namespace bnerf
             LOG(WARNING) << "start optim. scan size: " << source->size();
 
         SE3d init_guess;
-        OptimData data(voxer, source);
+        Optimizer optim(voxer, source);
 
-        data.SetEstimation(init_guess);
+        optim.SetEstimation(init_guess);
         for (int i = 0; ros::ok() && i < max_iters_; i++)
         {
-            data.best_.swap(data.temp_); //accept temp state
-            data.AccumulateHessian(data.best_);
+            optim.AccumulateHessian();
 
             if (verbose_)
-                LOG(INFO) << setprecision(12) 
+                LOG(INFO) << setprecision(12)
                     << "iterarion: " << i
-                    << "\tv-cnt: " << data.best_->valid_ids_.size() 
-                    << "\tloss: "  << data.best_->loss_;
+                    << "\tloss: " << optim.loss_
+                    << "\tvalid points: " << optim.valid_ids_.size();
 
-            Vec6d inc = data.H_.ldlt().solve(-data.b_);
+            Vec6d inc = optim.H_.ldlt().solve(-optim.b_);
             LOG_ASSERT(inc.allFinite());
             if (inc.squaredNorm() < epsilon_)
                 break;
 
             SE3d eps = SE3d::exp(inc);
-            data.SetEstimation(eps * data.best_->trans_);
-            // if (data.best_->loss_ <= data.temp_->loss_)
-            //     break;
+            optim.SetEstimation(eps * optim.trans_);
         }
 
-        edge_pub_.publish(GetBinaryEdge(data));
+        edge_pub_.publish(GetBinaryEdge(optim));
         if (viz_pub_)
-            viz_pub_->publish(GetCombinedScan(data));
+            viz_pub_->publish(GetCombinedScan(optim));
 
     }
 
 
     CloudXYZI ScanMatcher::GetCombinedScan(
-        const OptimData & data) const
+        const Optimizer & optim) const
     {
         LOG_ASSERT(viz_pub_);
-        const auto target = data.voxer_->GetInputTarget();
-        Mat44f trans = data.best_->trans_.matrix().cast<float>();
+        const auto target = optim.voxer_->GetInputTarget();
+        Mat44f trans = optim.trans_.matrix().cast<float>();
 
         
         CloudXYZ source;
-        pcl::transformPointCloud(*data.source_, source, trans);
+        pcl::transformPointCloud(*optim.source_, source, trans);
         const size_t num_source = source.size();
 
         CloudXYZI msg;
@@ -106,24 +101,24 @@ namespace bnerf
         for (size_t i = 0; i < msg.size(); i++)
             msg[i].intensity = i < num_source;
 
-        msg.header = data.source_->header;
+        msg.header = optim.source_->header;
         return msg;
     }
 
 
     bnerf_msgs::GraphBinaryEdge ScanMatcher::GetBinaryEdge(
-        const OptimData & data) const
+        const Optimizer & optim) const
     {
-        const auto target = data.voxer_->GetInputTarget();
-        const auto source = data.source_;
+        const auto target = optim.voxer_->GetInputTarget();
+        const auto source = optim.source_;
 
         bnerf_msgs::GraphBinaryEdge msg;
         pcl_conversions::fromPCL(target->header, msg.header1);
         pcl_conversions::fromPCL(source->header, msg.header2);
-        convert(data.best_->trans_, msg.transform);
+        convert(optim.trans_, msg.transform);
 
         Eigen::SelfAdjointEigenSolver<Mat66d> solver;
-        solver.compute(data.H_);
+        solver.compute(optim.H_);
 
         Vec6d evals = solver.eigenvalues();
         evals = evals.cwiseMax(1e-8);

@@ -1,6 +1,6 @@
 accum_knn: 20
 accum_radius: 1
-match_radius: 4
+match_radius: 2
 
 epsilon: 0.0004
 target_timeout: 0.1

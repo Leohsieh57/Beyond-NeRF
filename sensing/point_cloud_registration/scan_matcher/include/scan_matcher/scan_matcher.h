@@ -4,7 +4,7 @@
 
 #include <bnerf_utils/logging/logger.h>
 #include <voxelizer/voxelizer.h>
-#include <scan_matcher/optim_data.h>
+#include <scan_matcher/optimizer.h>
 #include <bnerf_utils/bnerf_utils.h>
 #include <bnerf_msgs/GraphBinaryEdge.h>
 
@@ -22,8 +22,8 @@ namespace bnerf
 
         private:
         Voxelizer::ConstPtr GetVoxelizer(CloudXYZ::ConstPtr);
-        CloudXYZI GetCombinedScan(const OptimData &) const;
-        bnerf_msgs::GraphBinaryEdge GetBinaryEdge(const OptimData &) const;
+        CloudXYZI GetCombinedScan(const Optimizer &) const;
+        bnerf_msgs::GraphBinaryEdge GetBinaryEdge(const Optimizer &) const;
         
 
         //registrator stuffs
