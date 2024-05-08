@@ -34,6 +34,7 @@ namespace bnerf
 
         //parameter & node handle stuffs
         private:
+        bool verbose_;
         bool use_gicp_;
         double epsilon_;
         int max_iters_;

@@ -14,6 +14,7 @@ namespace bnerf
         : nh_("~")
     {
         GET_REQUIRED(nh_, "max_iters", max_iters_);
+        GET_OPTIONAL(nh_, "verbose", verbose_, false);
         GET_OPTIONAL(nh_, "epsilon", epsilon_, 1e-3);
         epsilon_ *= epsilon_;
 
@@ -52,14 +53,23 @@ namespace bnerf
         if (target->header.stamp == source->header.stamp)
             return;
 
+        if (verbose_)
+            LOG(WARNING) << "start optim. scan size: " << source->size();
+
         SE3d init_guess;
         OptimData data(voxer, source);
-        data.SetEstimation(init_guess);
 
+        data.SetEstimation(init_guess);
         for (int i = 0; ros::ok() && i < max_iters_; i++)
         {
             data.best_.swap(data.temp_); //accept temp state
             data.AccumulateHessian(data.best_);
+
+            if (verbose_)
+                LOG(INFO) << setprecision(12) 
+                    << "iterarion: " << i
+                    << "\tv-cnt: " << data.best_->valid_ids_.size() 
+                    << "\tloss: "  << data.best_->loss_;
 
             Vec6d inc = data.H_.ldlt().solve(-data.b_);
             LOG_ASSERT(inc.allFinite());

@@ -29,7 +29,7 @@ initializer(omp_priv=Vec6d::Zero())
             st->voxels_.resize(w);
         }
         
-        errors_.resize(w);
+        residuals_.resize(w);
         trans_pts_.conservativeResize(3, w);
     }
 
@@ -49,10 +49,10 @@ initializer(omp_priv=Vec6d::Zero())
             jb.topRows<3>().setIdentity();
             jb.bottomRows<3>() = SO3d::hat(trans_pts_.col(pid));
 
-            auto & res = errors_.at(pid);
+            auto & res = residuals_[pid];
             for (int rid = 0; rid < res.cols(); rid++)
             {
-                const auto & vox = voxels.at(rid);
+                const auto & vox = voxels[rid];
                 b_ += jb * vox->info_ * res.col(rid);
                 H_ += jb * vox->info_ * jb.transpose();
             }
@@ -71,19 +71,16 @@ initializer(omp_priv=Vec6d::Zero())
             auto pt = trans_pts_.col(pid);
             pt = source_->at(pid).getVector3fMap().cast<double>();
 
-            auto & voxels = temp_->voxels_.at(pid);
+            auto & voxels = temp_->voxels_[pid];
             voxer_->GetVoxels(pt = trans * pt, voxels);
 
-            if (voxels.empty()) 
-                continue;
-
-            auto & res = errors_.at(pid);
+            auto & res = residuals_[pid];
             res.conservativeResize(3, voxels.size());
 
             double & chi2 = temp_->chi2s_[pid] = 0;
             for (int rid = 0; rid < res.cols(); rid++)
             {
-                const auto & vox = voxels.at(rid);
+                const auto & vox = voxels[rid];
                 const auto e = res.col(rid) = pt - vox->mean_;
                 chi2 += e.transpose() * vox->info_ * e;
             }
@@ -119,7 +116,6 @@ initializer(omp_priv=Vec6d::Zero())
                 omp_ids->swap(ids);
 
         vector<int> shifts = {0};
-        shifts.reserve(threads_ + 1);
         for (const auto &ids : omp_ids)
             shifts.push_back(shifts.back() + ids.size());
 
