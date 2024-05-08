@@ -59,7 +59,8 @@ namespace bnerf {
     }
 
 
-    Voxel::ConstPtr VoxelizerNDT::GetVoxel(const Vec3d &pt) const {
+    Voxel::ConstPtr VoxelizerNDT::GetVoxel(const Vec3d &pt) const 
+    {
         if ((pt.array() >= box_max_.array()).any())
             return nullptr;
 
@@ -68,17 +69,18 @@ namespace bnerf {
 
         auto ids = ileaf_.cwiseProduct(pt - box_min_).cast<int>();
         uint vid = shifts_.tail<3>().dot(ids);
-        LOG_ASSERT(vid < voxels_.size());
-        return voxels_[vid];
+        return voxels_.at(vid);
     }
 
 
-    double VoxelizerNDT::GetPenalty() const {
+    double VoxelizerNDT::GetPenalty() const 
+    {
         return leaf_.squaredNorm();
     }
 
 
-    int VoxelizerNDT::ComputeVolume() {
+    int VoxelizerNDT::ComputeVolume() 
+    {
         const auto pts = target_->getMatrixXfMap().topRows<3>();
         box_min_ = pts.rowwise().minCoeff().cast<double>(); 
         box_max_ = pts.rowwise().maxCoeff().cast<double>();

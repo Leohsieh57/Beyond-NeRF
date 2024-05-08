@@ -53,9 +53,8 @@ initializer(omp_priv=Vec6d::Zero())
 
     void Optimizer::SetEstimation(const SE3d & trans)
     {
-        trans_ = trans;
-
         loss_ = 0;
+        trans_ = trans;
         #pragma omp parallel for num_threads(threads_) reduction(+:loss_)
         for (size_t pid = 0; pid < source_->size(); pid++)
         {

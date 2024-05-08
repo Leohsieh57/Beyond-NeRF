@@ -20,9 +20,9 @@ namespace bnerf
 
         string solver;
         GET_REQUIRED(nh_, "solver", solver);
-        LOG_ASSERT(solver == "ndt" || solver == "gicp");
         use_gicp_ = solver == "gicp";
-
+        LOG_ASSERT(use_gicp_ || solver == "ndt");
+        
         double tgt_timeout;
         GET_REQUIRED(nh_, "target_timeout", tgt_timeout);
         tgt_timeout_.fromSec(tgt_timeout);
@@ -64,9 +64,9 @@ namespace bnerf
 
             if (verbose_)
                 LOG(INFO) << setprecision(12)
-                    << "iterarion: " << i
-                    << "\tloss: " << optim.loss_
-                    << "\tvalid points: " << optim.valid_ids_.size();
+                    << "iteration: " << i
+                    << "\tvalid points: " << optim.valid_ids_.size()
+                    << "\tloss: " << optim.loss_;
 
             Vec6d inc = optim.H_.ldlt().solve(-optim.b_);
             LOG_ASSERT(inc.allFinite());
