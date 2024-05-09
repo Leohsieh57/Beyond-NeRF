@@ -1,4 +1,4 @@
-std_msgs/Header header
+Header header
 string filter_name
 duration exec_time
 uint32 num_raw_scan_points

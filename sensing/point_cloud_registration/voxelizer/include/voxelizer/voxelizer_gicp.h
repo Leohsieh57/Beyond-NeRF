@@ -6,8 +6,10 @@
 #include <pcl/kdtree/kdtree_flann.h>
 
 
-namespace bnerf {
-    class VoxelizerGICP : public Voxelizer {
+namespace bnerf 
+{
+    class VoxelizerGICP : public Voxelizer 
+    {
         public: 
         VoxelizerGICP(ros::NodeHandle &);
         void GetVoxels(const Vec3d &, vector<Voxel::ConstPtr> &) const override;

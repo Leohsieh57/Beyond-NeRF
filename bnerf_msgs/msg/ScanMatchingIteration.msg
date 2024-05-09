@@ -1,0 +1,4 @@
+float32 loss
+uint32 num_valids
+duration exec_time
+geometry_msgs/Transform trans
