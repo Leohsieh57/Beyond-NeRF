@@ -1,5 +1,6 @@
 #include <glog/logging.h>
 #include <bnerf_utils/conversions.h>
+#include <bnerf_msgs/ScanMatchingInfo.h>
 #include <scan_matcher/scan_matcher.h>
 #include <voxelizer/voxelizer_ndt.h>
 #include <voxelizer/voxelizer_gicp.h>
@@ -35,7 +36,8 @@ namespace bnerf
             viz_pub_.reset(new ros::Publisher(move(viz_pub)));
         }
 
-        edge_pub_= nh_.advertise<bnerf_msgs::GraphBinaryEdge>("regist_binary_edge", 16);
+        edge_pub_ = nh_.advertise<bnerf_msgs::GraphBinaryEdge>("regist_binary_edge", 16);
+        info_pub_ = nh_.advertise<bnerf_msgs::ScanMatchingInfo>("scan_matching_info", 1000);
         src_sub_ = nh_.subscribe("source_scan", 16, &ScanMatcher::SourceScanCallBack, this);
         tgt_sub_ = nh_.subscribe("target_scan", 16, &ScanMatcher::TargetScanCallBack, this);
     }
@@ -43,6 +45,7 @@ namespace bnerf
 
     void ScanMatcher::SourceScanCallBack(const CloudXYZ::ConstPtr & source)
     {
+        const auto t1 = ros::Time::now();
         const auto voxer = GetVoxelizer(source);
         if (!voxer)
             return;
@@ -54,13 +57,14 @@ namespace bnerf
         Optimizer optim(voxer, source);
 
         optim.SetEstimation(init_guess);
-        for (int i = 0; ros::ok() && i < max_iters_; i++)
+        int num_iters = 0;
+        while (ros::ok() && num_iters++ < max_iters_)
         {
             optim.AccumulateHessian();
 
             if (verbose_)
                 LOG(INFO) << setprecision(12)
-                    << "iter: " << i
+                    << "iter: " << num_iters
                     << "\tnum_valids: " << optim.valid_ids_.size()
                     << "\tloss: " << optim.loss_;
 
@@ -73,10 +77,21 @@ namespace bnerf
             optim.SetEstimation(eps * optim.trans_);
         }
 
+        const auto t2 = ros::Time::now();
+
         edge_pub_.publish(GetBinaryEdge(optim));
         if (viz_pub_)
             viz_pub_->publish(GetCombinedScan(optim));
 
+        bnerf_msgs::ScanMatchingInfo msg;
+        pcl_conversions::fromPCL(source->header, msg.header);
+        msg.exec_time = t2 - t1;
+        msg.num_threads = voxer->GetNumThreads();
+        msg.solver = voxer->GetSolverName();
+        msg.loss = optim.loss_;
+        msg.num_iterations = num_iters;
+        msg.num_valid_points = optim.valid_ids_.size();
+        info_pub_.publish(msg);
     }
 
 

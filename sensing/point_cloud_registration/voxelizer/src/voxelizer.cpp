@@ -1,7 +1,7 @@
 #include <voxelizer/voxelizer.h>
 #include <bnerf_utils/bnerf_utils.h>
 #include <omp.h>
-
+#include <bnerf_msgs/VoxelizationInfo.h>
 
 namespace bnerf
 {
@@ -10,11 +10,14 @@ namespace bnerf
         GET_REQUIRED(nh, "min_points",  min_pts_);
         GET_REQUIRED(nh, "num_threads", threads_);
         strides_ = 12 * threads_;
+        info_pub_ = nh.advertise<bnerf_msgs::VoxelizationInfo>("voxelization_info", 1000);
     }
 
 
     void Voxelizer::SetInputTarget(CloudXYZ::ConstPtr target)
     {
+        const auto t1 = ros::Time::now();
+
         LOG_ASSERT(target_ = target);
         const auto vol = ComputeVolume();
         LOG_ASSERT(vol > 0);
@@ -78,12 +81,14 @@ namespace bnerf
             }
         }
 
-        #pragma omp parallel for num_threads(threads_)
+        int num_valids = 0;
+        #pragma omp parallel for num_threads(threads_) reduction(+:num_valids)
         for (int vid = 0; vid < vol; vid++)
         {
             if (invalid(vid)) 
                 continue;
 
+            num_valids++;
             double *data = get_acc(vid);
             Eigen::Map<Mat34d> acc(data);
             for (int i = 1; i < threads_; i++)
@@ -94,6 +99,15 @@ namespace bnerf
         }
 
         SetInputCallBack();
+        const auto t2 = ros::Time::now();
+
+        bnerf_msgs::VoxelizationInfo msg;
+        pcl_conversions::fromPCL(target->header, msg.header);
+        msg.exec_time = t2 - t1;
+        msg.num_threads = threads_;
+        msg.num_valid_voxels = num_valids;
+        msg.solver = GetSolverName();
+        info_pub_.publish(msg);
     }
 
     void Voxelizer::SetInputCallBack()

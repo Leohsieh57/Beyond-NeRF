@@ -17,9 +17,10 @@ namespace bnerf {
         
         public:
         const int & GetNumThreads() const;
+        virtual string GetSolverName() const = 0;
         virtual double GetPenalty() const = 0;
         virtual void GetVoxels(const Vec3d &, vector<Voxel::ConstPtr> &) const = 0;
-
+        
         protected:
         virtual int ComputeVolume() = 0;
         virtual void SetInputCallBack();
@@ -33,6 +34,7 @@ namespace bnerf {
         private:
         int min_pts_, strides_;
         Voxel::ConstPtr CreateVoxel(Eigen::Map<Mat34d> &);
+        ros::Publisher info_pub_;
 
         public:
         typedef shared_ptr<Voxelizer> Ptr;

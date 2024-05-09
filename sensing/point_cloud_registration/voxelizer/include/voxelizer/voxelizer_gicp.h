@@ -19,11 +19,11 @@ namespace bnerf
         double GetPenalty() const override;
         void GetAccumIds(const int &, vector<int> &) const override;
         void SetInputCallBack() override;
+        string GetSolverName() const override;
 
         private: 
         int accum_knn_;
         double accum_radi_, match_radi_;
-        vector<Voxel::ConstPtr> valids_;
         pcl::KdTreeFLANN<PointXYZ> tree_;
     };
 }

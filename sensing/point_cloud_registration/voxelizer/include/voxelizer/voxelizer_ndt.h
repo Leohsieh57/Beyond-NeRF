@@ -16,6 +16,7 @@ namespace bnerf {
         int ComputeVolume() override;
         double GetPenalty() const override;
         void GetAccumIds(const int &, vector<int> &) const override;
+        string GetSolverName() const override;
         
         
         private: 

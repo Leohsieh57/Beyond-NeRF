@@ -111,4 +111,10 @@ namespace bnerf {
         int aid = shifts_.tail<3>().dot(ids.cast<int>());
         accum_ids.assign(1, aid);
     }
+
+
+    string VoxelizerNDT::GetSolverName() const
+    {
+        return "normal_distribution_transformation";
+    }
 }

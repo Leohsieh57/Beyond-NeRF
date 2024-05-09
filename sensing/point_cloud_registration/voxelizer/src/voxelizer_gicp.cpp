@@ -31,7 +31,7 @@ namespace bnerf {
         if (ids.empty())
             voxels.clear();
         else
-            voxels.assign(1, valids_[ids[0]]);
+            voxels.assign(1, voxels_[ids[0]]);
     }
 
 
@@ -81,14 +81,14 @@ namespace bnerf {
         for (const auto &ids : omp_voxels)
             shifts.push_back(shifts.back() + ids.size());
 
-        valids_.swap(*omp_voxels);
-        valids_.resize(shifts.back());
+        voxels_.swap(*omp_voxels);
+        voxels_.resize(shifts.back());
         
         #pragma omp parallel for num_threads(threads_)
         for (int i = 1; i < threads_; i++)
         {
             auto &voxels = omp_voxels[i];
-            auto ibegin = valids_.begin() + shifts[i];
+            auto ibegin = voxels_.begin() + shifts[i];
             move(voxels.begin(), voxels.end(), ibegin);
         }
 
@@ -98,7 +98,7 @@ namespace bnerf {
         #pragma omp parallel for num_threads(threads_)
         for (size_t i = 0; i < valids; i++)
         {
-            const auto &vox = valids_[i];
+            const auto &vox = voxels_[i];
             LOG_ASSERT(vox);
 
             centroids->at(i).getVector3fMap()
@@ -121,5 +121,11 @@ namespace bnerf {
     {
         vector<float> dists;
         tree_.radiusSearch(pid, accum_radi_, ids, dists, accum_knn_);
+    }
+    
+
+    string VoxelizerGICP::GetSolverName() const
+    {
+        return "generalized_iterative_closest_points";
     }
 }

@@ -42,6 +42,7 @@ namespace bnerf
 
         //ros stuff
         ros::Publisher edge_pub_;
+        ros::Publisher info_pub_;
         ros::Subscriber src_sub_;
         ros::Subscriber tgt_sub_;
 
