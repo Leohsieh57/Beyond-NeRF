@@ -1,0 +1,5 @@
+INSTALL PCL
+sudo apt install libpcl-dev
+
+INSTALL PYTHON PCL
+sudo apt install python3-pcl
