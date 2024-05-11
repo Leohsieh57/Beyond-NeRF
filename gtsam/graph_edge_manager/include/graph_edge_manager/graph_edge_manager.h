@@ -20,15 +20,17 @@ namespace bnerf
         void GetAllEdges();
         
         private:
+        void EdgeCollectionCallBack(const ros::TimerEvent &);
         void NavSatCallBack(const sensor_msgs::NavSatFix &);
         void ScanMatchingCallBack(const bnerf_msgs::ScanMatchingFactor &);
         
         ros::Publisher edge_pub_;
+        ros::Timer timer_;
 
         bool utm_bias_set_;
         Vec3d utm_bias_;
         mutex utm_bias_mutex_;
-        Mat33d cov_;
+        Mat33d gps_cov_;
         ros::Duration win_span_;
 
         ros::Subscriber gps_sub_;

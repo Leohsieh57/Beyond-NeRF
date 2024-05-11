@@ -19,8 +19,8 @@ namespace bnerf
         GET_REQUIRED(nh, "gps/cov_y", cov_y);
         GET_REQUIRED(nh, "gps/cov_z", cov_z);
 
-        cov_.setZero();
-        cov_.diagonal() << cov_x, cov_y, cov_z;
+        gps_cov_.setZero();
+        gps_cov_.diagonal() << cov_x, cov_y, cov_z;
 
         double win_span;
         GET_REQUIRED(nh, "window_span", win_span);
@@ -33,14 +33,55 @@ namespace bnerf
         tf2_ros::TransformListener lis(buf);
         for (const auto & frame : frames)
         {
-            LOG(INFO) << "looking up transform...." << endl;
-            auto msg = buf.lookupTransform(ref_frame_, frame, ros::Time(0), ros::Duration(5));
+            auto msg = buf.lookupTransform(ref_frame_, frame, ros::Time(0), ros::Duration(20));
             trans_[frame] = convert<SE3d>(msg.transform);
         }
 
-        gps_sub_ = nh.subscribe("navsat_fix", 128, &GraphEdgeManager::NavSatCallBack, this);
-        reg_sub_ = nh.subscribe("scan_matching_factor", 128, 
-            &GraphEdgeManager::ScanMatchingCallBack, this);
+        
+        double rate;
+        GET_REQUIRED(nh, "update_rate", rate);
+        timer_ = nh.createTimer(ros::Duration(1 / rate), &GraphEdgeManager::EdgeCollectionCallBack, this);
+
+        gps_sub_ = nh.subscribe("navsat_fix", 1024, &GraphEdgeManager::NavSatCallBack, this);
+        reg_sub_ = nh.subscribe("scan_matching_factor", 32, &GraphEdgeManager::ScanMatchingCallBack, this);
+    }
+
+
+    void GraphEdgeManager::EdgeCollectionCallBack(const ros::TimerEvent & e)
+    {
+        const auto min_t = e.current_real - win_span_;
+        auto timeout = [&min_t] (const auto &p) {return p.first < min_t; };
+
+        bnerf_msgs::GraphEdgeCollection msg;
+        {
+            lock_guard<mutex> lock(gps_win_mutex_);
+            auto iend = remove_if(gps_win_.begin(), gps_win_.end(), timeout);
+            gps_win_.erase(iend, gps_win_.end());
+
+            msg.unary_edges.reserve(gps_win_.size());
+            for (const auto &[stamp, xyz]: gps_win_)
+            {
+                auto &e = msg.unary_edges.emplace_back();
+                e.stamp = stamp;
+                convert(xyz, e.mean);
+            }
+        }
+
+
+        {
+            lock_guard<mutex> lock(reg_win_mutex_);
+            auto iend = remove_if(reg_win_.begin(), reg_win_.end(), timeout);
+            reg_win_.erase(iend, reg_win_.end());
+
+            msg.binary_edges.reserve(reg_win_.size());
+            for (const auto &[_, e]: reg_win_)
+                msg.binary_edges.push_back(e);
+        }
+
+        for (auto &e : msg.unary_edges)
+            copy_n(gps_cov_.data(), e.covariance.size(), e.covariance.data());
+
+        edge_pub_.publish(msg);
     }
 
 
@@ -68,6 +109,7 @@ namespace bnerf
         }
 
         xyz -= utm_bias_;
+
         lock_guard<mutex> lock(gps_win_mutex_);
         gps_win_.emplace_back(gps_msg.header.stamp, xyz);
     }
@@ -94,6 +136,7 @@ namespace bnerf
         copy_n(cov.data(), 36, egde_msg.covariance.data());
 
         const auto t = min(egde_msg.source_stamp, egde_msg.target_stamp);
+
         lock_guard<mutex> lock(reg_win_mutex_);
         reg_win_.emplace_back(t, egde_msg);
     }
