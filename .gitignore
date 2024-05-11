@@ -15,6 +15,7 @@ hdl_graph_slam
 *.pcd
 *.csv
 *.pkl
+*.pth
 *.json
 
 # Compiled Object files
