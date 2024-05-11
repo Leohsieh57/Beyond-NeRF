@@ -1,5 +1,4 @@
 <launch>
-    <!-- <include file="$(find kitti2bag)/launch/replay.launch"/> -->
     <include file="$(find scan_matcher)/launch/test_kitti.launch">
         <arg name="visualize" value="false" />
     </include>
@@ -17,5 +16,10 @@
         <remap from="~/scan_matching_factor" to="scan_matcher_node/scan_matching_factor"/>
         
     </node>
-	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find graph_edge_manager)/rviz/kitti.rviz" />
+
+    <node pkg="factor_graph_optimizer" type="factor_graph_optimizer_node" name="factor_graph_optimizer_node" output="screen">
+    </node>
+
+
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find factor_graph_optimizer)/rviz/kitti.rviz" />
 </launch>

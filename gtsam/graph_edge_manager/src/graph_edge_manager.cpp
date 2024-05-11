@@ -57,6 +57,8 @@ namespace bnerf
             lock_guard<mutex> lock(gps_win_mutex_);
             auto iend = remove_if(gps_win_.begin(), gps_win_.end(), timeout);
             gps_win_.erase(iend, gps_win_.end());
+            if (gps_win_.empty())
+                return;
 
             msg.unary_edges.reserve(gps_win_.size());
             for (const auto &[stamp, xyz]: gps_win_)
@@ -68,10 +70,13 @@ namespace bnerf
         }
 
 
+
         {
             lock_guard<mutex> lock(reg_win_mutex_);
             auto iend = remove_if(reg_win_.begin(), reg_win_.end(), timeout);
             reg_win_.erase(iend, reg_win_.end());
+            if (reg_win_.empty())
+                return;
 
             msg.binary_edges.reserve(reg_win_.size());
             for (const auto &[_, e]: reg_win_)
