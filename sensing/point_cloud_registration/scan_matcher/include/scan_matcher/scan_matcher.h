@@ -6,7 +6,6 @@
 #include <voxelizer/voxelizer.h>
 #include <scan_matcher/optimizer.h>
 #include <bnerf_utils/bnerf_utils.h>
-#include <bnerf_msgs/GraphBinaryEdge.h>
 
 
 namespace bnerf
@@ -15,16 +14,11 @@ namespace bnerf
     {
         public: 
         ScanMatcher();
-        SE3d OptimizeAlignment(CloudXYZ::ConstPtr, const SE3d & init_guess = SE3d());
-
         void SourceScanCallBack(const CloudXYZ::ConstPtr &);
         void TargetScanCallBack(const CloudXYZ::ConstPtr &);
 
         private:
         Voxelizer::ConstPtr GetVoxelizer(CloudXYZ::ConstPtr);
-        CloudXYZI GetCombinedScan(const Optimizer &) const;
-        bnerf_msgs::GraphBinaryEdge GetBinaryEdge(const Optimizer &) const;
-        
 
         //registrator stuffs
         private:

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(my_listener)
+project(factor_graph_optimizer)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -16,22 +16,23 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   message_generation
   tf2_ros
+  bnerf_utils
 )
-add_message_files(
-  FILES
-  TimeTransform.msg
-)
+# add_message_files(
+#   FILES
+#   TimeTransform.msg
+# )
 
-catkin_python_setup()
+# catkin_python_setup()
 
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
-)
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+#   geometry_msgs
+# )
 
 catkin_package(
-  CATKIN_DEPENDS message_runtime std_msgs geometry_msgs
+  CATKIN_DEPENDS message_runtime std_msgs geometry_msgs bnerf_utils
 )
 find_package(GTSAM REQUIRED)
 ## System dependencies are found with CMake's conventions

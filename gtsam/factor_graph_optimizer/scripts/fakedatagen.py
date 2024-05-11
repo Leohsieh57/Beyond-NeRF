@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 from geometry_msgs.msg import TransformStamped
-from my_listener.msg import TimeTransform
+from bnerf_msgs.msg import GraphBinaryEdge
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
@@ -20,18 +20,19 @@ def generate_transforms(n=10, path_length=10):
 
 def publisher():
     rospy.init_node('transform_publisher', anonymous=True)
-    pub = rospy.Publisher('transformations', TimeTransform, queue_size=10)
+    pub = rospy.Publisher('graph_binary_edge', GraphBinaryEdge, queue_size=10)
     rate = rospy.Rate(10)  # 10hz
     transforms = generate_transforms()
 
     while not rospy.is_shutdown():
-        for i, transform in enumerate(transforms):
-            msg = TimeTransform()
-            msg.geo_trans = transform.transform
-            msg.t1 = transform.header.stamp  # Simulating the timestamp for t1
-            msg.t2 = rospy.Time.now()  # Assuming t2 is the current time for simplicity
+        for i, trans_stamped in enumerate(transforms):
+            msg = GraphBinaryEdge(transform=trans_stamped.transform) #trans from 2 to 1
+            msg.header2 = trans_stamped.header
+            msg.header2 = trans_stamped.header
+            trans_stamped
+            msg.header1.stamp = rospy.Time.now()  # Assuming t2 is the current time for simplicity
             pub.publish(msg)
-            rospy.loginfo(f"Published transformation from {transform.header.frame_id} to {transform.child_frame_id}")
+            rospy.loginfo(f"Published transformation from {msg.header1.frame_id} to {transform.child_frame_id}")
             rate.sleep()
 
 if __name__ == '__main__':

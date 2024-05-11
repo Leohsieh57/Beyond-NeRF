@@ -1,6 +1,7 @@
 #include "ros/ros.h"
-#include "my_listener/TimeTransform.h"
-#include "my_listener/GraphIterationStatus.h" // edit as needed, the location needs to be changed
+#include <bnerf_msgs/GraphBinaryEdge.h>
+#include <bnerf_msgs/GraphUnaryEdge.h>
+#include <bnerf_msgs/GraphIterationStatus.h> // edit as needed, the location needs to be changed
 #include "gtsam/geometry/Pose3.h"
 #include "gtsam/nonlinear/NonlinearFactorGraph.h"
 #include "gtsam/nonlinear/LevenbergMarquardtOptimizer.h"
@@ -35,18 +36,15 @@ ros::Subscriber sub;
 // Time variable for managing publication rate
 ros::Time last_pub_time;
 
-void transformCallback(const my_listener::TimeTransform::ConstPtr& msg) {
-    std::string t1 = std::to_string(msg->t1.toSec());
-    std::string t2 = std::to_string(msg->t2.toSec());
+void transformCallback(const bnerf_msgs::GraphBinaryEdge::ConstPtr& msg) {
+    std::string t1 = std::to_string(msg->header1.stamp.toSec());
+    std::string t2 = std::to_string(msg->header2.stamp.toSec());
 
     // Convert ROS transform to GTSAM Pose3
-    gtsam::Pose3 pose(gtsam::Rot3::Quaternion(msg->geo_trans.rotation.w,
-                                              msg->geo_trans.rotation.x,
-                                              msg->geo_trans.rotation.y,
-                                              msg->geo_trans.rotation.z),
-                      gtsam::Point3(msg->geo_trans.translation.x,
-                                    msg->geo_trans.translation.y,
-                                    msg->geo_trans.translation.z));
+    const auto &q = msg->transform.rotation;
+    const auto &t = msg->transform.translation;
+    gtsam::Pose3 pose(gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z),
+                      gtsam::Point3(t.x, t.y, t.z));
 
     int key_t1, key_t2;
     // Check if t1 and t2 have corresponding keys, if not -- add them
@@ -80,7 +78,7 @@ int main(int argc, char **argv) {
     // subscribers and publishers
     sub = nh.subscribe("transformations", 1000, transformCallback);
     //pose_pub = nh.advertise<geometry_msgs::PoseStamped>("optimized_poses", 10);
-    status_pub = nh.advertise<my_listener::GraphIterationStatus>("graph_status", 10);
+    status_pub = nh.advertise<bnerf_msgs::GraphIterationStatus>("graph_status", 10);
 
 
     ros::Rate rate(10.0);
@@ -91,7 +89,7 @@ int main(int argc, char **argv) {
 	if (updatesSinceLastOptimization >= 5) {
 	
 	//if (ros::Time::now() - last_pub_time > ros::Duration(1.0)) { //placeholder condition to test
-	    my_listener::GraphIterationStatus status_msg; // to be changed
+	    bnerf_msgs::GraphIterationStatus status_msg; // to be changed
 	    ROS_ERROR("Condition met, running optimizer...");
 	    
 	    gtsam::LevenbergMarquardtParams params;

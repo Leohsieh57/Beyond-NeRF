@@ -4,6 +4,8 @@
 
 #include <bnerf_utils/typedef.h>
 #include <voxelizer/voxelizer.h>
+#include <bnerf_msgs/ScanMatchingInfo.h>
+#include <bnerf_msgs/ScanMatchingFactor.h>
 
 
 namespace bnerf
@@ -11,6 +13,9 @@ namespace bnerf
     struct Optimizer
     {
         Optimizer(Voxelizer::ConstPtr, CloudXYZ::ConstPtr);
+        void GetScanMatchingInfo(bnerf_msgs::ScanMatchingInfo &) const;
+        void GetCombinedScan(CloudXYZI &) const;
+        void GetScanMatchingFactor(bnerf_msgs::ScanMatchingFactor &) const;
 
         SE3d trans_;
         Voxelizer::ConstPtr voxer_;

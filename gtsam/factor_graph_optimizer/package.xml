@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>my_listener</name>
+  <name>factor_graph_optimizer</name>
   <version>0.0.0</version>
-  <description>The my_listener package</description>
+  <description>The factor_graph_optimizer package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -69,6 +69,11 @@
   <exec_depend>tf2_ros</exec_depend>
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>
+
+
+  <build_depend>bnerf_utils</build_depend>
+  <exec_depend>bnerf_utils</exec_depend>
+  <build_export_depend>bnerf_utils</build_export_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

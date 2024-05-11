@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <glog/logging.h>
-#include <navsat_bias/navsat_bias.h>
+#include <graph_edge_manager/graph_edge_manager.h>
 
 
 int main (int argc, char **argv)
@@ -10,7 +10,7 @@ int main (int argc, char **argv)
 
     ros::init(argc, argv, ros::this_node::getName());
     ros::NodeHandle nh("~");
-    bnerf::NavSatBias navsat_bias(nh);
+    bnerf::GraphEdgeManager manager(nh);
 
     ros::spin();
 }

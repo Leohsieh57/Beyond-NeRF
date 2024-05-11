@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 
-project(navsat_bias)
+project(graph_edge_manager)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
@@ -28,7 +28,7 @@ add_library(
 )
 
 add_dependencies(
-    ${PROJECT_NAME} 
+    ${PROJECT_NAME}
     ${catkin_EXPORTED_TARGETS}
 )
 

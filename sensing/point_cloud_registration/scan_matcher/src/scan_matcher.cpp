@@ -1,6 +1,5 @@
 #include <glog/logging.h>
 #include <bnerf_utils/conversions.h>
-#include <bnerf_msgs/ScanMatchingInfo.h>
 #include <scan_matcher/scan_matcher.h>
 #include <voxelizer/voxelizer_ndt.h>
 #include <voxelizer/voxelizer_gicp.h>
@@ -36,8 +35,8 @@ namespace bnerf
             viz_pub_.reset(new ros::Publisher(move(viz_pub)));
         }
 
-        edge_pub_ = nh_.advertise<bnerf_msgs::GraphBinaryEdge>("regist_binary_edge", 16);
-        info_pub_ = nh_.advertise<bnerf_msgs::ScanMatchingInfo>("scan_matching_info", 1000);
+        edge_pub_ = nh_.advertise<bnerf_msgs::ScanMatchingFactor>("scan_matching_factor", 16);
+        info_pub_ = nh_.advertise<bnerf_msgs::ScanMatchingInfo>("scan_matching_info", 16);
         src_sub_ = nh_.subscribe("source_scan", 16, &ScanMatcher::SourceScanCallBack, this);
         tgt_sub_ = nh_.subscribe("target_scan", 16, &ScanMatcher::TargetScanCallBack, this);
     }
@@ -55,16 +54,16 @@ namespace bnerf
 
         SE3d init_guess;
         Optimizer optim(voxer, source);
-
         optim.SetEstimation(init_guess);
-        int num_iters = 0;
-        while (ros::ok() && num_iters++ < max_iters_)
+
+        bnerf_msgs::ScanMatchingInfo info_msg;
+        while (ros::ok() && info_msg.num_iterations++ < max_iters_)
         {
             optim.AccumulateHessian();
 
             if (verbose_)
                 LOG(INFO) << setprecision(12)
-                    << "iter: " << num_iters
+                    << "iter: " << info_msg.num_iterations
                     << "\tnum_valids: " << optim.valid_ids_.size()
                     << "\tloss: " << optim.loss_;
 
@@ -78,69 +77,69 @@ namespace bnerf
         }
 
         const auto t2 = ros::Time::now();
-
-        edge_pub_.publish(GetBinaryEdge(optim));
-        if (viz_pub_)
-            viz_pub_->publish(GetCombinedScan(optim));
-
-        bnerf_msgs::ScanMatchingInfo msg;
-        pcl_conversions::fromPCL(source->header, msg.header);
-        msg.exec_time = t2 - t1;
-        msg.num_threads = voxer->GetNumThreads();
-        msg.solver = voxer->GetSolverName();
-        msg.loss = optim.loss_;
-        msg.num_iterations = num_iters;
-        msg.num_valid_points = optim.valid_ids_.size();
-        info_pub_.publish(msg);
-    }
-
-
-    CloudXYZI ScanMatcher::GetCombinedScan(
-        const Optimizer & optim) const
-    {
-        LOG_ASSERT(viz_pub_);
-        const auto target = optim.voxer_->GetInputTarget();
-        const auto trans = convert<Mat44f>(optim.trans_);
         
-        CloudXYZ source;
-        pcl::transformPointCloud(*optim.source_, source, trans);
-        const size_t num_source = source.size();
-
-        CloudXYZI msg;
-        pcl::copyPointCloud(source += *target, msg);
-        for (size_t i = 0; i < msg.size(); i++)
-            msg[i].intensity = i < num_source;
-
-        msg.header = optim.source_->header;
-        return msg;
+        bnerf_msgs::ScanMatchingFactor edge_msg;
+        optim.GetScanMatchingFactor(edge_msg);
+        edge_pub_.publish(edge_msg);
+        
+        if (viz_pub_)
+        {
+            CloudXYZI scan_msg;
+            optim.GetCombinedScan(scan_msg);
+            viz_pub_->publish(scan_msg);
+        }
+        
+        optim.GetScanMatchingInfo(info_msg);
+        info_msg.exec_time = t2 - t1;
+        info_pub_.publish(info_msg);
     }
 
 
-    bnerf_msgs::GraphBinaryEdge ScanMatcher::GetBinaryEdge(
-        const Optimizer & optim) const
-    {
-        const auto target = optim.voxer_->GetInputTarget();
-        const auto source = optim.source_;
+    // CloudXYZI ScanMatcher::GetCombinedScan(
+    //     const Optimizer & optim)
+    // {
+    //     const auto target = optim.voxer_->GetInputTarget();
+    //     const auto trans = convert<Mat44f>(optim.trans_);
+        
+    //     CloudXYZ source;
+    //     pcl::transformPointCloud(*optim.source_, source, trans);
+    //     const size_t num_source = source.size();
 
-        bnerf_msgs::GraphBinaryEdge msg;
-        pcl_conversions::fromPCL(target->header, msg.header1);
-        pcl_conversions::fromPCL(source->header, msg.header2);
-        convert(optim.trans_, msg.transform);
+    //     CloudXYZI msg;
+    //     pcl::copyPointCloud(source += *target, msg);
+    //     for (size_t i = 0; i < msg.size(); i++)
+    //         msg[i].intensity = i < num_source;
 
-        Eigen::SelfAdjointEigenSolver<Mat66d> solver;
-        solver.compute(optim.H_);
+    //     msg.header = optim.source_->header;
+    //     return msg;
+    // }
 
-        Vec6d evals = solver.eigenvalues();
-        evals = evals.cwiseMax(1e-8);
-        LOG_ASSERT((evals.array() > 0).all());
-        evals.normalize();
 
-        const Mat66d &evecs = solver.eigenvectors();
-        const Mat66d cov = evecs.transpose() * evals.asDiagonal() * evecs;
-        copy_n(cov.data(), 36, msg.covariance.data());
+    // bnerf_msgs::ScanMatchingFactor ScanMatcher::GetScanMatchingFactor(
+    //     const Optimizer & optim)
+    // {
+    //     const auto target = optim.voxer_->GetInputTarget();
+    //     const auto source = optim.source_;
 
-        return msg;
-    }
+    //     bnerf_msgs::ScanMatchingFactor msg;
+    //     pcl_conversions::fromPCL(target->header, msg.target_header);
+    //     pcl_conversions::fromPCL(source->header, msg.source_header);
+    //     convert(optim.trans_, msg.transform);
+
+    //     Eigen::SelfAdjointEigenSolver<Mat66d> solver;
+    //     solver.compute(optim.H_);
+
+    //     Vec6d evals = solver.eigenvalues();
+    //     evals = evals.cwiseMax(1e-8);
+    //     LOG_ASSERT((evals.array() > 0).all());
+    //     evals.normalize();
+
+    //     const Mat66d &evecs = solver.eigenvectors();
+    //     const Mat66d cov = evecs.transpose() * evals.asDiagonal() * evecs;
+    //     copy_n(cov.data(), 36, msg.covariance.data());
+
+    //     return msg;
+    // }
 
 
     Voxelizer::ConstPtr ScanMatcher::GetVoxelizer(CloudXYZ::ConstPtr source)

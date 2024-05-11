@@ -1,2 +1,0 @@
-sensor_msgs/PointCloud2 view1
-sensor_msgs/PointCloud2 view2

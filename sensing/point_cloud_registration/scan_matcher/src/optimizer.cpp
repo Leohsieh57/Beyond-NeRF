@@ -2,6 +2,8 @@
 #include <bnerf_utils/conversions.h>
 #include <omp.h>
 #include <scan_matcher/optimizer.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/common/transforms.h>
 
 
 namespace bnerf
@@ -121,5 +123,57 @@ initializer(omp_priv=Vec6d::Zero())
         }
 
         return valids;
+    }
+
+
+    void Optimizer::GetScanMatchingInfo(
+        bnerf_msgs::ScanMatchingInfo & msg) const
+    {
+        pcl_conversions::fromPCL(source_->header, msg.header);
+        msg.num_threads = voxer_->GetNumThreads();
+        msg.solver = voxer_->GetSolverName();
+        msg.loss = loss_;
+        msg.num_valid_points = valid_ids_.size();
+    }
+
+
+    void Optimizer::GetCombinedScan(CloudXYZI & msg) const
+    {
+        const auto target = voxer_->GetInputTarget();
+        const auto trans = convert<Mat44f>(trans_);
+        
+        CloudXYZ source;
+        pcl::transformPointCloud(*source_, source, trans);
+        const size_t num_source = source.size();
+
+        pcl::copyPointCloud(source += *target, msg);
+        for (size_t i = 0; i < msg.size(); i++)
+            msg[i].intensity = i < num_source;
+
+        msg.header = source_->header;
+    }
+
+
+    void Optimizer::GetScanMatchingFactor(
+        bnerf_msgs::ScanMatchingFactor & msg) const
+    {
+        const auto target = voxer_->GetInputTarget();
+        const auto source = source_;
+
+        pcl_conversions::fromPCL(target->header, msg.target_header);
+        pcl_conversions::fromPCL(source->header, msg.source_header);
+        convert(trans_, msg.transform);
+
+        Eigen::SelfAdjointEigenSolver<Mat66d> solver;
+        solver.compute(H_);
+
+        Vec6d evals = solver.eigenvalues();
+        evals = evals.cwiseMax(1e-8);
+        LOG_ASSERT((evals.array() > 0).all());
+        evals.normalize();
+
+        const Mat66d &evecs = solver.eigenvectors();
+        const Mat66d cov = evecs.transpose() * evals.asDiagonal() * evecs;
+        copy_n(cov.data(), 36, msg.covariance.data());
     }
 }
