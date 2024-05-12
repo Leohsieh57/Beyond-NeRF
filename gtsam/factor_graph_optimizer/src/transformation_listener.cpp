@@ -12,7 +12,13 @@
 #include <string>
 #include <glog/logging.h>
 #include <gtsam/nonlinear/LevenbergMarquardtParams.h>
-
+#include "bnerf_msgs/GraphEdgeCollection.h"
+#include "bnerf_msgs/GraphBinaryEdge.h"
+#include "bnerf_msgs/GraphUnaryEdge.h"
+#include <cmath> // For std::abs
+#include <limits> // For std::numeric_limits
+#include <map>
+#include <string>
 // visualization stuff
 #include "ros/ros.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -22,6 +28,8 @@
 // listen for now you are gonna ignore my ugly code and lack of modularity. i'll refactor later <3 (i mixed tabs and spaces ok)
 // timing variables
 std::chrono::high_resolution_clock::time_point start_time, end_time;
+double totalError = 0.0;
+int count = 0;
 
 gtsam::NonlinearFactorGraph graph;
 gtsam::Values initial;
@@ -37,41 +45,66 @@ ros::Subscriber sub;
 // Time variable for managing publication rate
 ros::Time last_pub_time;
 
-void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr & msg) {
-    LOG(INFO) << "received " << msg->binary_edges.size()
-        << " binary edges and " << msg->unary_edges.size() << " unary edges";
-    // std::string t1 = std::to_string(msg->header1.stamp.toSec());
-    // std::string t2 = std::to_string(msg->header2.stamp.toSec());
 
-    // // Convert ROS transform to GTSAM Pose3
-    // const auto &q = msg->transform.rotation;
-    // const auto &t = msg->transform.translation;
-    // gtsam::Pose3 pose(gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z),
-    //                   gtsam::Point3(t.x, t.y, t.z));
-
-    // int key_t1, key_t2;
-    // // Check if t1 and t2 have corresponding keys, if not -- add them
-    // if (time_to_key_map.find(t1) == time_to_key_map.end()) {
-    //     key_t1 = current_key++;
-    //     time_to_key_map[t1] = key_t1;
-    //     initial.insert(gtsam::Symbol('x', key_t1), gtsam::Pose3());  // Default initialize
-    // } else {
-    //     key_t1 = time_to_key_map[t1];
-    // }
-
-    // if (time_to_key_map.find(t2) == time_to_key_map.end()) {
-    //     key_t2 = current_key++;
-    //     time_to_key_map[t2] = key_t2;
-    //     initial.insert(gtsam::Symbol('x', key_t2), pose);
-    // } else {
-    //     key_t2 = time_to_key_map[t2];
-    // }
-
-    // // Create a between factor between t1 and t2
-    // auto model = gtsam::noiseModel::Diagonal::Variances(gtsam::Vector6::Constant(0.1));
-    // graph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1), gtsam::Symbol('x', key_t2), pose, model));
-    // updatesSinceLastOptimization++;
+double calculateError(const geometry_msgs::Transform& t1, const geometry_msgs::Vector3& t2) {
+    double dx = t1.translation.x - t2.x;
+    double dy = t1.translation.y - t2.y;
+    double dz = t1.translation.z - t2.z;
+    return sqrt(dx*dx + dy*dy + dz*dz);
 }
+
+void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr& msg) {
+    //LOG(INFO) << "received " << msg->binary_edges.size()
+    //    << " binary edges and " << msg->unary_edges.size() << " unary edges";
+
+    for (const auto& binary_edge : msg->binary_edges) {
+        const bnerf_msgs::GraphUnaryEdge* closest_unary_edge = nullptr;
+        double min_time_diff = std::numeric_limits<double>::infinity();
+
+        for (const auto& unary_edge : msg->unary_edges) {
+            double time_diff = std::abs(binary_edge.target_stamp.toSec() - unary_edge.stamp.toSec());
+            if (time_diff < min_time_diff) {
+                min_time_diff = time_diff;
+                closest_unary_edge = &unary_edge;
+            }
+        }
+
+        if (closest_unary_edge) {
+            //LOG(INFO) << "Closest unary edge found with time diff: " << min_time_diff;
+            double error = calculateError(binary_edge.mean, closest_unary_edge->mean);
+            totalError += error;
+            count++;
+
+            std::string binary_timestamp = std::to_string(binary_edge.target_stamp.toSec());
+            std::string unary_timestamp = std::to_string(closest_unary_edge->stamp.toSec());
+
+            int key_t1, key_t2;
+            if (time_to_key_map.find(binary_timestamp) == time_to_key_map.end()) {
+                key_t1 = current_key++;
+                time_to_key_map[binary_timestamp] = key_t1;
+                initial.insert(gtsam::Symbol('x', key_t1), gtsam::Pose3());
+            } else {
+                key_t1 = time_to_key_map[binary_timestamp];
+            }
+
+            if (time_to_key_map.find(unary_timestamp) == time_to_key_map.end()) {
+                key_t2 = current_key++;
+                time_to_key_map[unary_timestamp] = key_t2;
+                initial.insert(gtsam::Symbol('x', key_t2), gtsam::Pose3());
+            } else {
+                key_t2 = time_to_key_map[unary_timestamp];
+            }
+
+            auto model = gtsam::noiseModel::Diagonal::Variances(gtsam::Vector6::Constant(0.1));
+            graph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1), gtsam::Symbol('x', key_t2), gtsam::Pose3()));
+        }
+    }
+    if (count > 0) {
+      double averageError = totalError / count;
+      LOG(INFO) << "Average Error: " << averageError;
+    }
+}
+
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "transformation_listener");
@@ -137,6 +170,10 @@ int main(int argc, char **argv) {
                 initial = result; // Uudate initial estimates with optimized values
                 last_pub_time = ros::Time::now(); // update last publication time
                 updatesSinceLastOptimization = 0;
+                
+                // Reset cumulative error calculation after successful optimization
+                totalError = 0.0;
+                count = 0;
 
             } catch (const std::exception& e) {
                 ROS_ERROR("Exception during optimization: %s", e.what());
