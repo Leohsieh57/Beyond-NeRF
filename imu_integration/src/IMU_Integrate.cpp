@@ -33,6 +33,8 @@ std::deque<sensor_msgs::Imu> globalImuDeque;
 // store IMU msgs
 void IMUCallback(const sensor_msgs::Imu::ConstPtr &msg)
 {
+    //sort this
+
     // limit que size to 5000
     if (globalImuDeque.size() > 5000)
     {
@@ -43,6 +45,7 @@ void IMUCallback(const sensor_msgs::Imu::ConstPtr &msg)
 
 bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU::Response &res)
 {
+    //integrate between the two times
     std::vector<ros::Time> stamps = req.stamps;
     std::vector<Imu> imu_msgs;
     std::vector<geometry_msgs::Transform> all_transforms;
