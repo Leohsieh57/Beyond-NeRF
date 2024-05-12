@@ -16,11 +16,12 @@ from sensor_msgs.point_cloud2 import create_cloud
 from sensor_msgs.msg import PointField, PointCloud2, Image
 from std_msgs.msg import Header
 from cv_bridge import CvBridge
+from bnerf_msgs.msg import DUSt3RInfo
 import PIL
 
 
 
-class PredictorDUSt3R:
+class DUSt3RNet:
     def __init__(self, pretrain, device, width, slop):
         self.device = torch.device(device)
         self.model = AsymmetricCroCo3DStereo.from_pretrained(pretrain).to(self.device)
@@ -32,18 +33,29 @@ class PredictorDUSt3R:
         self.sync.registerCallback(self.stereo_call_back)
 
         self.img_norm = tvf.Compose([tvf.ToTensor(), tvf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-        self.pub = rospy.Publisher('~dust3r_cloud', PointCloud2, queue_size=10)
+        self.scan_pub = rospy.Publisher('~dust3r_cloud', PointCloud2, queue_size=10)
+        self.info_pub = rospy.Publisher('~dust3r_info', DUSt3RInfo, queue_size=10)
+
+        fields = enumerate('x y z intensity'.split())
+        self.fields = [PointField(c, 4*i, PointField.FLOAT32, 1) for i, c in fields]
 
 
     @torch.no_grad()
     def stereo_call_back(self, img1, img2):
+        t1 = rospy.Time.now()
         batch = self.prepare_batch(img1, img2)
         cloud = self.predict_point_cloud(batch)
         dt = img2.header.stamp - img1.header.stamp
+        t2 = rospy.Time.now()
 
         cloud.header = img1.header
         cloud.header.stamp += dt * 0.5
-        self.pub.publish(cloud)
+        self.scan_pub.publish(cloud)
+
+        msg = DUSt3RInfo()
+        msg.exec_time = t2 - t1
+        msg.header = cloud.header
+        self.info_pub.publish(msg)
 
 
     def predict_point_cloud(self, batch):
@@ -56,11 +68,8 @@ class PredictorDUSt3R:
         conf = [pred1['conf'][0], pred2['conf'][0]]
         conf = torch.cat(conf, dim=0).unsqueeze(-1)
         xyzi = torch.cat([xyz, conf], dim=-1).reshape(-1, 4)
-            
-        fields = enumerate('x y z intensity'.split())
-        fields = [PointField(c, 4*i, PointField.FLOAT32, 1) for i, c in fields]
 
-        return create_cloud(Header(), fields, xyzi.detach().cpu().numpy())
+        return create_cloud(Header(), self.fields, xyzi.detach().cpu().numpy())
 
 
     def prepare_batch(self, img1, img2):
@@ -93,6 +102,6 @@ if __name__ == '__main__':
     rospy.init_node('dust3r_node')
 
     kwargs = rospy.get_param('~')
-    dust3r = PredictorDUSt3R(**kwargs)
+    dust3r = DUSt3RNet(**kwargs)
     
     rospy.spin()
