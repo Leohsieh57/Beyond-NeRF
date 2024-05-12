@@ -46,15 +46,26 @@ class PredictorDUSt3R:
         # print(img1.header.stamp, img2.header.stamp)
 
         batch = self.prepare_batch(img1, img2)
-        self.predict(batch)
+        self.predict_point_clouds(batch)
         pass
 
 
-    def predict(self, batch):
+
+    def predict_point_clouds(self, batch):
         res = loss_of_one_batch(batch, self.model, None, self.device)
         pred1, pred2 = res['pred1'], res['pred2']
-        for k, v in pred1.items():
-            print(k, v.shape)
+
+        clouds = []
+        for b in range(2):
+            xyz = [pred1['pts3d'][b], pred2['pts3d_in_other_view'][b]]
+            xyz = torch.cat(xyz, dim=0)
+
+            conf = [pred1['conf'][b], pred2['conf'][b]]
+            conf = torch.cat(conf, dim=0).unsqueeze(-1)
+            xyzi = torch.cat([xyz, conf], dim=-1).reshape(-1, 4)
+            print(xyzi.shape)
+            
+            
 
 
     def prepare_batch(self, img1, img2):
