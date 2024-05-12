@@ -20,5 +20,5 @@
         <!-- <remap from="~/raw_scan" to="/kitti/velo/pointcloud"/> -->
     </node>
     
-	<!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(find dust3r)/rviz/kitti.rviz" /> -->
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find dust3r)/rviz/kitti.rviz" />
 </launch>

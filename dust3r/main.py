@@ -38,6 +38,8 @@ class PredictorDUSt3R:
         self.sync.registerCallback(self.stereo_call_back)
 
         self.img_norm = tvf.Compose([tvf.ToTensor(), tvf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        self.pub1 = rospy.Publisher('~view1/dust3r_cloud', PointCloud2, queue_size=10)
+        self.pub2 = rospy.Publisher('~view2/dust3r_cloud', PointCloud2, queue_size=10)
         # print(self.model)
 
 
@@ -46,8 +48,11 @@ class PredictorDUSt3R:
         # print(img1.header.stamp, img2.header.stamp)
 
         batch = self.prepare_batch(img1, img2)
-        self.predict_point_clouds(batch)
-        pass
+        cloud1, cloud2 = self.predict_point_clouds(batch)
+        cloud1.header = img1.header
+        cloud2.header = img2.header
+        self.pub1.publish(cloud1)
+        self.pub2.publish(cloud2)
 
 
 
@@ -63,7 +68,14 @@ class PredictorDUSt3R:
             conf = [pred1['conf'][b], pred2['conf'][b]]
             conf = torch.cat(conf, dim=0).unsqueeze(-1)
             xyzi = torch.cat([xyz, conf], dim=-1).reshape(-1, 4)
-            print(xyzi.shape)
+
+            fields = enumerate('x y z intensity'.split())
+            fields = [PointField(c, 4*i, PointField.FLOAT32, 1) for i, c in fields]
+
+            cloud = create_cloud(Header(), fields, xyzi.detach().cpu().numpy())
+            clouds.append(cloud)
+        
+        return clouds
             
             
 
