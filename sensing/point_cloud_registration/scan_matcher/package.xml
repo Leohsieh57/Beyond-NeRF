@@ -16,6 +16,10 @@
     <exec_depend>voxelizer</exec_depend>
     <build_export_depend>voxelizer</build_export_depend>
 
+    <build_depend>floor_detector</build_depend>
+    <exec_depend>floor_detector</exec_depend>
+    <build_export_depend>floor_detector</build_export_depend>
+
     <export>
     </export>
 </package>

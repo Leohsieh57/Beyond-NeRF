@@ -1,7 +1,7 @@
 #include <voxelizer/voxelizer.h>
 #include <bnerf_utils/bnerf_utils.h>
 #include <omp.h>
-#include <bnerf_msgs/VoxelizationInfo.h>
+
 
 namespace bnerf
 {
@@ -10,11 +10,10 @@ namespace bnerf
         GET_REQUIRED(nh, "min_points",  min_pts_);
         GET_REQUIRED(nh, "num_threads", threads_);
         strides_ = 12 * threads_;
-        info_pub_ = nh.advertise<bnerf_msgs::VoxelizationInfo>("voxelization_info", 1000);
     }
 
 
-    void Voxelizer::SetInputTarget(CloudXYZ::ConstPtr target)
+    bnerf_msgs::VoxelizationInfo Voxelizer::SetInputTarget(CloudXYZ::ConstPtr target)
     {
         const auto t1 = ros::Time::now();
 
@@ -107,7 +106,7 @@ namespace bnerf
         msg.num_threads = threads_;
         msg.num_valid_voxels = num_valids;
         msg.solver = GetSolverName();
-        info_pub_.publish(msg);
+        return msg;
     }
 
     void Voxelizer::SetInputCallBack()

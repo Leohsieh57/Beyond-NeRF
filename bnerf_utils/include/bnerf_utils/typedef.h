@@ -26,8 +26,10 @@ namespace bnerf {
     using visualization_msgs::MarkerArray;
     
     typedef Eigen::VectorXd VecXd;
+    typedef Eigen::VectorXf VecXf;
     typedef Eigen::Vector2d Vec2d;
     typedef Eigen::Vector3d Vec3d;
+    typedef Eigen::Vector4d Vec4d;
     typedef Eigen::Vector3f Vec3f;
     typedef Eigen::Vector2i Vec2i;
     typedef Eigen::Vector3i Vec3i;

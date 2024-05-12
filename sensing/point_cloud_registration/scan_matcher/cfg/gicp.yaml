@@ -3,7 +3,7 @@ accum_radius: 1
 match_radius: 2
 
 epsilon: 0.0004
-target_timeout: 0.1
+window_span: 0.1
 min_points: 8
 num_threads: 4
 max_iters: 128

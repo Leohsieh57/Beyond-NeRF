@@ -18,6 +18,9 @@
         <rosparam file="$(find scan_matcher)/cfg/$(arg solver).yaml" />
         <param name="visualize" type="bool" value="$(arg visualize)" />
         <param name="verbose" type="bool" value="false" />
+        <param name="floor_dist_thres" type="double" value="0.1" />
+        <param name="floor_probability" type="double" value="0.98" />
+        
         <param name="solver" type="string" value="$(arg solver)" />
         <remap from="~/target_scan" to="$(arg target_topic)"/>
         <remap from="~/source_scan" to="/voxel_grid_filter_node/filtered_points"/>

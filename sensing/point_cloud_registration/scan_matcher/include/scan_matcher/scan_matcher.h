@@ -6,6 +6,7 @@
 #include <voxelizer/voxelizer.h>
 #include <scan_matcher/optimizer.h>
 #include <bnerf_utils/bnerf_utils.h>
+#include <floor_detector/floor_detector.h>
 
 
 namespace bnerf
@@ -23,8 +24,9 @@ namespace bnerf
         //registrator stuffs
         private:
         ros::NodeHandle nh_;
+        FloorDetector floor_detector_;
         mutex vox_mutex_;
-        vector<Voxelizer::ConstPtr> voxers_;
+        vector<Voxelizer::ConstPtr> vox_win_;
 
         //parameter & node handle stuffs
         private:
@@ -32,11 +34,12 @@ namespace bnerf
         bool use_gicp_;
         double epsilon_;
         int max_iters_;
-        ros::Duration tgt_timeout_;
+        ros::Duration vox_win_span_;
 
         //ros stuff
         ros::Publisher edge_pub_;
-        ros::Publisher info_pub_;
+        ros::Publisher vox_pub_;
+        ros::Publisher reg_pub_;
         ros::Subscriber src_sub_;
         ros::Subscriber tgt_sub_;
 

@@ -1,14 +1,11 @@
 cmake_minimum_required(VERSION 3.8)
 
-project(dust3r)
+project(floor_detector)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
 
 find_package(catkin REQUIRED COMPONENTS
-    roscpp
-    pcl_ros
-    bnerf_msgs
     bnerf_utils
 )
 
@@ -43,8 +40,4 @@ catkin_package(
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
     bnerf_utils
-    bnerf_msgs
 )
-
-add_executable(${PROJECT_NAME}_test test.cpp)
-target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})

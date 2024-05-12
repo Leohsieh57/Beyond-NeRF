@@ -2,7 +2,7 @@ leaf_size: 1
 neighbor_search: direct7
 
 epsilon: 0.0004
-target_timeout: 0.4
+window_span: 0.4
 min_points: 8
 num_threads: 4
 max_iters: 256

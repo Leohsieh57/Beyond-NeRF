@@ -5,13 +5,14 @@
 #include <bnerf_utils/bnerf_utils.h>
 #include <bnerf_utils/conversions.h>
 #include <voxelizer/voxel.h>
+#include <bnerf_msgs/VoxelizationInfo.h>
 
 
 namespace bnerf {
     class Voxelizer {
         public: 
         Voxelizer(ros::NodeHandle &);
-        void SetInputTarget(CloudXYZ::ConstPtr);
+        bnerf_msgs::VoxelizationInfo SetInputTarget(CloudXYZ::ConstPtr);
         CloudXYZ::ConstPtr GetInputTarget() const;
         ros::Time GetStamp() const;
         
@@ -34,7 +35,6 @@ namespace bnerf {
         private:
         int min_pts_, strides_;
         Voxel::ConstPtr CreateVoxel(Eigen::Map<Mat34d> &);
-        ros::Publisher info_pub_;
 
         public:
         typedef shared_ptr<Voxelizer> Ptr;
