@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /PointCloud21
       Splitter Ratio: 0.5021008253097534
     Tree Height: 1118
   - Class: rviz/Selection
@@ -60,21 +61,21 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 0; 255; 127
+      Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
-      Max Color: 0; 255; 127
-      Min Color: 255; 0; 0
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
       Name: PointCloud2
       Position Transformer: XYZ
-      Queue Size: 1
+      Queue Size: 10
       Selectable: true
-      Size (Pixels): 2
+      Size (Pixels): 3
       Size (m): 0.0010000000474974513
       Style: Points
-      Topic: /dust3r_node/view1/dust3r_cloud
+      Topic: /dust3r_node/dust3r_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -100,9 +101,9 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.0010000000474974513
+      Size (m): 0.009999999776482582
       Style: Points
-      Topic: /dust3r_node/view2/dust3r_cloud
+      Topic: /kitti/velo/pointcloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -135,7 +136,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 43.799354553222656
+      Distance: 61.52872085571289
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -143,17 +144,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 8.038753509521484
-        Y: 0.041700124740600586
-        Z: 3.4971389770507812
+        X: 0.3576030433177948
+        Y: 0.8248355984687805
+        Z: -2.0994839668273926
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6797972321510315
+      Pitch: 1.029796838760376
       Target Frame: base_link
-      Yaw: 3.2046592235565186
+      Yaw: 2.6746506690979004
     Saved: ~
 Window Geometry:
   Displays:
