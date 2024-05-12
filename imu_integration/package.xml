@@ -10,6 +10,11 @@
   <maintainer email="michaela@todo.todo">michaela</maintainer>
 
 
+  <build_depend>bnerf_utils</build_depend>
+  <exec_depend>bnerf_utils</exec_depend>
+  <build_export_depend>bnerf_utils</build_export_depend>
+
+
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
