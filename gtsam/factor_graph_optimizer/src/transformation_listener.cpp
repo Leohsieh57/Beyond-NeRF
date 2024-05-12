@@ -1,6 +1,6 @@
 #include "ros/ros.h"
 #include <bnerf_msgs/GraphBinaryEdge.h>
-#include <bnerf_msgs/GraphUnaryEdge.h>
+#include <bnerf_msgs/GraphEdgeCollection.h>
 #include <bnerf_msgs/GraphIterationStatus.h> // edit as needed, the location needs to be changed
 #include "gtsam/geometry/Pose3.h"
 #include "gtsam/nonlinear/NonlinearFactorGraph.h"
@@ -10,6 +10,7 @@
 #include "gtsam/slam/BetweenFactor.h"
 #include <unordered_map>
 #include <string>
+#include <glog/logging.h>
 #include <gtsam/nonlinear/LevenbergMarquardtParams.h>
 
 // visualization stuff
@@ -36,39 +37,40 @@ ros::Subscriber sub;
 // Time variable for managing publication rate
 ros::Time last_pub_time;
 
-void transformCallback(const bnerf_msgs::GraphBinaryEdge::ConstPtr& msg) {
-    std::string t1 = std::to_string(msg->header1.stamp.toSec());
-    std::string t2 = std::to_string(msg->header2.stamp.toSec());
+void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr & msg) {
+    LOG(INFO) << "received " << msg->binary_edges.size()
+        << " binary edges and " << msg->unary_edges.size() << " unary edges";
+    // std::string t1 = std::to_string(msg->header1.stamp.toSec());
+    // std::string t2 = std::to_string(msg->header2.stamp.toSec());
 
-    // Convert ROS transform to GTSAM Pose3
-    const auto &q = msg->transform.rotation;
-    const auto &t = msg->transform.translation;
-    gtsam::Pose3 pose(gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z),
-                      gtsam::Point3(t.x, t.y, t.z));
+    // // Convert ROS transform to GTSAM Pose3
+    // const auto &q = msg->transform.rotation;
+    // const auto &t = msg->transform.translation;
+    // gtsam::Pose3 pose(gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z),
+    //                   gtsam::Point3(t.x, t.y, t.z));
 
-    int key_t1, key_t2;
-    // Check if t1 and t2 have corresponding keys, if not -- add them
-    if (time_to_key_map.find(t1) == time_to_key_map.end()) {
-        key_t1 = current_key++;
-        time_to_key_map[t1] = key_t1;
-        initial.insert(gtsam::Symbol('x', key_t1), gtsam::Pose3());  // Default initialize
-    } else {
-        key_t1 = time_to_key_map[t1];
-    }
+    // int key_t1, key_t2;
+    // // Check if t1 and t2 have corresponding keys, if not -- add them
+    // if (time_to_key_map.find(t1) == time_to_key_map.end()) {
+    //     key_t1 = current_key++;
+    //     time_to_key_map[t1] = key_t1;
+    //     initial.insert(gtsam::Symbol('x', key_t1), gtsam::Pose3());  // Default initialize
+    // } else {
+    //     key_t1 = time_to_key_map[t1];
+    // }
 
-    if (time_to_key_map.find(t2) == time_to_key_map.end()) {
-        key_t2 = current_key++;
-        time_to_key_map[t2] = key_t2;
-        initial.insert(gtsam::Symbol('x', key_t2), pose);
-    } else {
-        key_t2 = time_to_key_map[t2];
-    }
+    // if (time_to_key_map.find(t2) == time_to_key_map.end()) {
+    //     key_t2 = current_key++;
+    //     time_to_key_map[t2] = key_t2;
+    //     initial.insert(gtsam::Symbol('x', key_t2), pose);
+    // } else {
+    //     key_t2 = time_to_key_map[t2];
+    // }
 
-    // Create a between factor between t1 and t2
-    auto model = gtsam::noiseModel::Diagonal::Variances(gtsam::Vector6::Constant(0.1));
-    graph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1), gtsam::Symbol('x', key_t2), pose, model));
-    updatesSinceLastOptimization++;
-    //ROS_ERROR("Updates since last optimization first: %d", updatesSinceLastOptimization);
+    // // Create a between factor between t1 and t2
+    // auto model = gtsam::noiseModel::Diagonal::Variances(gtsam::Vector6::Constant(0.1));
+    // graph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1), gtsam::Symbol('x', key_t2), pose, model));
+    // updatesSinceLastOptimization++;
 }
 
 int main(int argc, char **argv) {
@@ -76,7 +78,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
     
     // subscribers and publishers
-    sub = nh.subscribe("transformations", 1000, transformCallback);
+    sub = nh.subscribe("/graph_edge_manager_node/graph_edge_collection", 1000, EdgeCallBack);
     //pose_pub = nh.advertise<geometry_msgs::PoseStamped>("optimized_poses", 10);
     status_pub = nh.advertise<bnerf_msgs::GraphIterationStatus>("graph_status", 10);
 

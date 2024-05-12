@@ -18,8 +18,8 @@
 #include <sensor_msgs/Imu.h>
 #include <deque>
 
-#include "bnerf_msgs/msg/imumsg.h"
-#include "bnerf_msgs/srv/IntegrateIMU.h"
+#include <sensor_msgs/Imu.h>
+#include <bnerf_msgs/IntegrateIMU.h>
 
 using namespace std;
 using namespace gtsam;
@@ -47,7 +47,7 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
 {
     //integrate between the two times
     std::vector<ros::Time> stamps = req.stamps;
-    std::vector<Imu> imu_msgs;
+    std::vector<sensor_msgs::Imu> imu_msgs;
     std::vector<geometry_msgs::Transform> all_transforms;
 
     for (const auto &stamp : stamps)
@@ -103,9 +103,11 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
     for (int i = 1; i < stamps.size(); ++i)
     {
         double dt = stamps[i].toSec() - stamps[i - 1].toSec();
+        const auto & lin_acc = imu_msgs[i].linear_acceleration;
+        const auto & ang_vel = imu_msgs[i].angular_velocity;
         current_summarized_measurement->integrateMeasurement(
-            imu_msgs[i].linear_acceleration, imu_msgs[i].orientation,
-            dt);
+            gtsam::Vector3(lin_acc.x, lin_acc.y, lin_acc.z),
+            gtsam::Vector3(ang_vel.x, ang_vel.y, ang_vel.z), dt);
 
         Vector3 delta_position = current_summarized_measurement->deltaPij();
         geometry_msgs::Vector3 p;

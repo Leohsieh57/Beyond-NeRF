@@ -8,12 +8,10 @@ project(imu_integration)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  std_msgs
-  sensor_msgs
+  bnerf_utils
 )
 
-find_package(TBB REQUIRED)
+find_package(GTSAM REQUIRED)
 
 catkin_package()
 
@@ -32,6 +30,7 @@ add_executable(${PROJECT_NAME}_node src/IMU_Integrate.cpp)
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
   gtsam
+  bnerf_utils
 )
 
 ## System dependencies are found with CMake's conventions
@@ -126,8 +125,8 @@ target_link_libraries(${PROJECT_NAME}_node
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES imu_integration
-#  CATKIN_DEPENDS roscpp std_msgs
-#  DEPENDS system_lib
+ CATKIN_DEPENDS roscpp std_msgs
+ DEPENDS bnerf_utils
 )
 
 ###########
