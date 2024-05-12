@@ -5,21 +5,19 @@ import torch
 import torchvision.transforms as tvf
 import numpy as np
 
-from dust3r.utils.image import load_images
 from dust3r.inference import *
 from dust3r.utils.image import _resize_pil_image
 from dust3r.image_pairs import make_pairs
 from dust3r.model import AsymmetricCroCo3DStereo
-from dust3r.utils.device import to_cpu, collate_with_cat
+from dust3r.utils.device import collate_with_cat
 
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 from sensor_msgs.point_cloud2 import create_cloud
 from sensor_msgs.msg import PointField, PointCloud2, Image
-from geometry_msgs.msg import Transform, TransformStamped
 from std_msgs.msg import Header
+
 import tf2_ros
 from cv_bridge import CvBridge
-import cv2
 import PIL
 
 from scipy.spatial.transform import Rotation as R
@@ -63,21 +61,52 @@ class PredictorDUSt3R:
         clouds = []
         for b in range(2):
             xyz = [pred1['pts3d'][b], pred2['pts3d_in_other_view'][b]]
-            xyz = torch.cat(xyz, dim=0)
+            if b:
+                xyz.reverse()
+
+            xyz = torch.cat(xyz, dim=0).reshape(-1, 3)
 
             conf = [pred1['conf'][b], pred2['conf'][b]]
-            conf = torch.cat(conf, dim=0).unsqueeze(-1)
-            xyzi = torch.cat([xyz, conf], dim=-1).reshape(-1, 4)
+            if b:
+                conf.reverse()
 
+            conf = torch.cat(conf, dim=0).reshape(-1, 1)
+            # xyzi = torch.cat([xyz, conf], dim=-1).reshape(-1, 4)
+            clouds.append(dict(xyz=xyz, conf=conf))
+
+            # fields = enumerate('x y z intensity'.split())
+            # fields = [PointField(c, 4*i, PointField.FLOAT32, 1) for i, c in fields]
+
+            # cloud = create_cloud(Header(), fields, xyzi.detach().cpu().numpy())
+            # clouds.append(cloud)
+
+        x1 = clouds[0]['xyz']
+        x2 = geotrf(self.to_view1[:3,:3], clouds[1]['xyz'])
+        x1x2 = torch.sum(x1 * x2).item()
+        x1x1 = torch.pow(x1, 2).sum().item()
+        x2x2 = torch.pow(x2, 2).sum().item()
+
+        x1t = (torch.sum(x1, dim=0) * self.to_view1[:3,-1]).sum().item()
+        x2t = (torch.sum(x2, dim=0) * self.to_view1[:3,-1]).sum().item()
+
+        a = np.array([[x1x1, -x1x2], [-x1x2, x2x2]])
+        b = np.array([x1t, x2t])
+        s1, s2 = np.abs(np.linalg.solve(a, b))
+        print(s1, s2)
+        clouds[0]['xyz'] *= s1
+        clouds[1]['xyz'] *= s2
+
+        msgs = []
+        for cloud in clouds:
+            xyzi = torch.cat([cloud['xyz'], cloud['conf']], dim=-1)
+            
             fields = enumerate('x y z intensity'.split())
             fields = [PointField(c, 4*i, PointField.FLOAT32, 1) for i, c in fields]
 
-            cloud = create_cloud(Header(), fields, xyzi.detach().cpu().numpy())
-            clouds.append(cloud)
-        
-        return clouds
-            
-            
+            msg = create_cloud(Header(), fields, xyzi.detach().cpu().numpy())
+            msgs.append(msg)
+
+        return msgs
 
 
     def prepare_batch(self, img1, img2):
@@ -110,7 +139,6 @@ class PredictorDUSt3R:
         buf = tf2_ros.Buffer()
         lis = tf2_ros.TransformListener(buf)
 
-        msg: TransformStamped
         msg = buf.lookup_transform(frame_view1, frame_view2, rospy.Time(0), rospy.Duration(5))
         q = msg.transform.rotation
         t = msg.transform.translation
@@ -119,6 +147,7 @@ class PredictorDUSt3R:
         T[:3,:3] = R.from_quat([q.x, q.y, q.z, q.w]).as_matrix()
         T[:3,-1] = np.array([t.x, t.y, t.z])
         self.to_view1 = torch.from_numpy(T).to(self.device)
+        # self.to_view1 = torch.inverse(self.to_view1)
 
 
 if __name__ == '__main__':
