@@ -1,5 +1,5 @@
-#ifndef __BNERF_DUST3R_RESCALER_H__
-#define __BNERF_DUST3R_RESCALER_H__
+#ifndef __BNERF_STEREO_RESCALER_H__
+#define __BNERF_STEREO_RESCALER_H__
 
 
 #include <bnerf_utils/typedef.h>
@@ -10,12 +10,12 @@
 
 namespace bnerf
 {
-    class DUSt3RScaleFinder
+    class StereoRescaler
     {
         public: 
-        DUSt3RScaleFinder(ros::NodeHandle &);
-        void SyncCallBack(const CloudXYZ::ConstPtr &, const bnerf_msgs::FloorCoeffs::ConstPtr &);
-        void FloorCallBack(const bnerf_msgs::FloorCoeffs &);
+        StereoRescaler(ros::NodeHandle &);
+        void SyncedCallBack(const CloudXYZ::ConstPtr &, const bnerf_msgs::FloorCoeffs::ConstPtr &);
+        void CoeffsCallBack(const bnerf_msgs::FloorCoeffs &);
 
         //parameter & node handle stuffs
         private:

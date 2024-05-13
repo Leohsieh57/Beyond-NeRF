@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-    <name>dust3r_scale_finder</name>
+    <name>stereo_rescaler</name>
     <version>0.0.0</version>
-    <description>dust3r_scale_finder</description>
+    <description>stereo_rescaler</description>
     <maintainer email="bardiche4768@todo.todo">bardiche4768</maintainer>
 
     <license>TODO</license>

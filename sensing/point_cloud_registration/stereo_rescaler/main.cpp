@@ -1,4 +1,4 @@
-#include <scan_matcher/scan_matcher.h>
+#include <stereo_rescaler/stereo_rescaler.h>
 #include <bnerf_utils/bnerf_utils.h>
 
 
@@ -8,7 +8,8 @@ int main(int argc, char **argv)
     google::InstallFailureSignalHandler();
 
     ros::init(argc, argv, ros::this_node::getName());
-    bnerf::ScanMatcher scan_matcher;
+    ros::NodeHandle nh("~");
+    bnerf::StereoRescaler rescaler(nh);
     
     ros::spin();
     return 0;
