@@ -16,10 +16,11 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
+#include <geometry_msgs/Transform.h>
 #include <deque>
 
-#include <sensor_msgs/Imu.h>
-#include <bnerf_msgs/IntegrateIMU.h>
+// #include "bnerf_msgs/msg/imumsg.h"
+#include "bnerf_msgs/IntegrateIMU.h"
 
 using namespace std;
 using namespace gtsam;
@@ -29,22 +30,45 @@ using symbol_shorthand::V; // Vel   (xdot,ydot,zdot)
 using symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
 
 std::deque<sensor_msgs::Imu> globalImuDeque;
+std::mutex globalImuDequeMutex;
 
-// store IMU msgs
+Vector3 toVector3(const geometry_msgs::Vector3 &v)
+{
+    return Vector3(v.x, v.y, v.z);
+}
+
+// store IMU msgs in time order
 void IMUCallback(const sensor_msgs::Imu::ConstPtr &msg)
 {
+    // wait until we are allowed to edit the IMU array
+    std::lock_guard<std::mutex> lock(globalImuDequeMutex);
+
+    // sort data by time
+    auto insert_pos = globalImuDeque.begin();
+    for (; insert_pos != globalImuDeque.end(); ++insert_pos)
+    {
+        if (msg->header.stamp < insert_pos->header.stamp)
+        {
+            break;
+        }
+    }
+
+    // Insert the new message at the correct position
+    globalImuDeque.insert(insert_pos, *msg);
+
     // limit que size to 5000
     if (globalImuDeque.size() > 5000)
     {
         globalImuDeque.pop_front();
     }
-    globalImuDeque.push_back(*msg);
 }
 
-bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU::Response &res)
+geometry_msgs::Transform integrate_subarray(std::vector<sensor_msgs::Imu> imu_msgs, ros::Time start_time, ros::Time end_time)
 {
-    std::vector<ros::Time> stamps = req.stamps;
-    std::vector<sensor_msgs::Imu> imu_msgs;
+    // dummy change to force buildability
+    std::vector<ros::Time> stamps;
+    // std::vector<ros::Time> stamps = req.stamps;
+    // std::vector<sensor_msgs::Imu> imu_msgs;
     std::vector<geometry_msgs::Transform> all_transforms;
 
     for (const auto &stamp : stamps)
@@ -62,7 +86,9 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         if (!found)
         {
             //res.transforms = all_transforms;
-            return false;
+            // dummy change to force buildability
+            return geometry_msgs::Transform();
+            //return false;
         }
     }
 
@@ -70,7 +96,7 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
     double g = 9.8;
     auto w_coriolis = Vector3::Zero(); // zero vector
 
-    // TODO: dummy values, change later
+    // TODO: placeholder values, change later
     double accelerometer_sigma = 0.2;
     double gyroscope_sigma = 0.2;
     double integration_sigma = 0.2;
@@ -97,35 +123,93 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         std::make_shared<PreintegratedImuMeasurements>(imu_params,
                                                        current_bias);
 
-    for (int i = 1; i < stamps.size(); ++i)
+    //integration loop
+    double dt;
+    for (int i = 0; i < imu_msgs.size(); ++i)
     {
-        double dt = stamps[i].toSec() - stamps[i - 1].toSec();
-        const auto & lin_acc = imu_msgs[i].linear_acceleration;
-        const auto & ang_vel = imu_msgs[i].angular_velocity;
+        if (i == 0)
+        {
+            dt = (imu_msgs[i].header.stamp - start_time).toSec();
+        }
+        else if (i == imu_msgs.size() - 1)
+        {
+            dt = (end_time - imu_msgs[i - 1].header.stamp).toSec();
+        }
+        else
+        {
+            dt = imu_msgs[i].header.stamp.toSec() - imu_msgs[i - 1].header.stamp.toSec();
+        }
+        if (dt == 0)
+        {
+            dt = std::numeric_limits<double>::epsilon(); // set to a very small value
+        }
         current_summarized_measurement->integrateMeasurement(
-            gtsam::Vector3(lin_acc.x, lin_acc.y, lin_acc.z),
-            gtsam::Vector3(ang_vel.x, ang_vel.y, ang_vel.z), dt);
+            toVector3(imu_msgs[i].linear_acceleration),
+            toVector3(imu_msgs[i].angular_velocity),
+            dt);
+    }
 
-        Vector3 delta_position = current_summarized_measurement->deltaPij();
-        geometry_msgs::Vector3 p;
-        p.x = delta_position.x();
-        p.y = delta_position.y();
-        p.z = delta_position.z();
+    //convert to transformation matrix
+    Vector3 delta_velocity = current_summarized_measurement->deltaVij();
+    geometry_msgs::Vector3 v;
+    v.x = delta_velocity.x();
+    v.y = delta_velocity.y();
+    v.z = delta_velocity.z();
 
-        Rot3 delta_rotation = current_summarized_measurement->deltaRij();
-        Quaternion q(delta_rotation.matrix());
+    Vector3 delta_position = current_summarized_measurement->deltaPij();
+    geometry_msgs::Vector3 p;
+    p.x = delta_position.x();
+    p.y = delta_position.y();
+    p.z = delta_position.z();
+
+    Rot3 delta_rotation = current_summarized_measurement->deltaRij();
+    Quaternion q(delta_rotation.matrix());
+
+    geometry_msgs::Transform transform;
+    transform.translation.x = p.x;
+    transform.translation.y = p.y;
+    transform.translation.z = p.z;
+    transform.rotation.x = q.x();
+    transform.rotation.y = q.y();
+    transform.rotation.z = q.z();
+    transform.rotation.w = q.w();
+
+    return transform;
+}
+
+bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU::Response &res)
+{
+    std::vector<ros::Time> stamps = req.stamps;
+    std::vector<geometry_msgs::Transform> all_transforms;
+    std::vector<bool> validities;
+
+    // make our subarrays between each 2 consecutive timestamps
+    for (size_t i = 0; i < stamps.size() - 1; ++i)
+    {
+        std::vector<sensor_msgs::Imu> subarray;
+
+        // Find all the messages between the two timestamps
+        for (const auto &imu_msg : globalImuDeque)
+        {
+            if (imu_msg.header.stamp >= stamps[i] && imu_msg.header.stamp < stamps[i + 1])
+            {
+                subarray.push_back(imu_msg);
+            }
+            else if (imu_msg.header.stamp >= stamps[i + 1])
+            {
+                break; // deque is sorted
+            }
+        }
+
+        bool is_valid = !subarray.empty();
+        validities.push_back(is_valid);
 
         geometry_msgs::Transform transform;
-        transform.translation.x = p.x;
-        transform.translation.y = p.y;
-        transform.translation.z = p.z;
-        transform.rotation.x = q.x();
-        transform.rotation.y = q.y();
-        transform.rotation.z = q.z();
-        transform.rotation.w = q.w();
+        if (is_valid)
+        {
+            transform = integrate_subarray(subarray, stamps[i], stamps[i + 1]);
+        }
         all_transforms.push_back(transform);
-
-        current_summarized_measurement->resetIntegration();
     }
 
     //res.transforms = all_transforms;
