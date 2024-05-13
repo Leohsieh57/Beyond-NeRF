@@ -15,7 +15,6 @@ namespace bnerf
         , floor_pub_(nh.advertise<bnerf_msgs::FloorCoeffs>("floor", 16))
     {
         bool visualize;
-        GET_OPTIONAL(nh, "publish_valid_ids", pub_ids_, true);
         GET_OPTIONAL(nh, "visualize", visualize, false);
         GET_REQUIRED(nh, "num_threads", threads_);
         GET_REQUIRED(nh, "dist_thres", dist_);

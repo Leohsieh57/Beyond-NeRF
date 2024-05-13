@@ -16,7 +16,6 @@ namespace bnerf
         void ScanCallBack(const CloudXYZ::ConstPtr &) const;
         
         private:
-        bool pub_ids_;
         int threads_;
         double dist_;
         double prob_;
