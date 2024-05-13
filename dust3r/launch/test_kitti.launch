@@ -2,10 +2,11 @@
     <include file="$(find kitti2bag)/launch/replay.launch"/>
 
     <node pkg="dust3r" type="main.py" name="dust3r_stereo_node" output="screen">
-        <param name="pretrain" type="string" value="$(find dust3r)/checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth" />
-        <param name="device" type="string" value="cuda" />
-        <param name="width" type="int" value="512" />
-        <param name="slop" type="double" value="0.015" />
+        <param name="pretrain" value="$(find dust3r)/checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth" />
+        <param name="device" value="cuda" />
+        <param name="width" value="512" />
+        <param name="slop" value="0.015" />
+        <param name="min_confidence" value="1.5" />
 
         <remap from="~/view1/image" to="/kitti/camera_color_left/image_raw"/>
         <remap from="~/view2/image" to="/kitti/camera_color_right/image_raw"/>

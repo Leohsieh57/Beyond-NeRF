@@ -22,7 +22,7 @@ import PIL
 
 
 class DUSt3RNet:
-    def __init__(self, pretrain, device, width, slop):
+    def __init__(self, pretrain, device, width, slop, min_confidence):
         self.device = torch.device(device)
         self.model_name = os.path.basename(pretrain)
         self.model = AsymmetricCroCo3DStereo.from_pretrained(pretrain).to(self.device)
@@ -34,6 +34,7 @@ class DUSt3RNet:
         self.sync.registerCallback(self.stereo_call_back)
 
         self.img_norm = tvf.Compose([tvf.ToTensor(), tvf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        self.min_conf = min_confidence
         self.scan_pub = rospy.Publisher('~dust3r_cloud', PointCloud2, queue_size=10)
         self.info_pub = rospy.Publisher('~dust3r_info', DUSt3RInfo, queue_size=10)
 
@@ -76,7 +77,14 @@ class DUSt3RNet:
         conf = [x.detach().cpu().numpy() for x in conf]
         conf = np.expand_dims(np.vstack(conf), axis=-1)
 
-        xyzi = np.concatenate([xyz, conf], axis=-1).reshape((-1, 4))
+        valid_ids = conf > self.min_conf
+        print(xyz.shape, conf.shape)
+        conf = conf[valid_ids]
+        print(xyz.shape, conf.shape)
+        xyz = xyz[valid_ids]
+        print(xyz.shape, conf.shape)
+
+        xyzi = np.concatenate([xyz, conf], axis=-1)
         cloud = create_cloud(Header(), self.fields, xyzi)
         return cloud
 
