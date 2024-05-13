@@ -21,6 +21,8 @@
 #include <chrono>
 #include <glog/logging.h>
 #include <gtsam/slam/PriorFactor.h> // unary factor
+#include <cstdlib>
+#include <fstream>
 
 gtsam::Values initial;
 gtsam::NonlinearFactorGraph graph; // global graph
@@ -55,9 +57,18 @@ int ensureKeyExists(const std::string& timestamp, gtsam::Values& values, const g
 }
 
 void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr& msg) {
+    std::string homeDir = getenv("HOME");
+    static std::ofstream outFile(homeDir + "/catkin_ws/src/Beyond-NeRF/gtsam/factor_graph_optimizer/pose_data.csv", std::ios::app);
+    time_to_key_map.clear();
+    current_key = 0;
     gtsam::NonlinearFactorGraph localGraph;
     gtsam::Values localInitial;
     auto poseNoiseModel = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1).finished());
+
+    if (!outFile.is_open()) {
+        outFile.open(homeDir + "/catkin_ws/src/Beyond-NeRF/gtsam/factor_graph_optimizer/pose_data.csv", std::ios::app);
+    }
+
 
     // Process unary edges
     for (const auto& unary_edge : msg->unary_edges) {
@@ -73,6 +84,8 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr& msg) {
         ROS_INFO("Key for timestamp %s is %d", timestamp.c_str(), key);
 
         localGraph.add(gtsam::PriorFactor<gtsam::Pose3>(gtsam::Symbol('x', key), gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(x, y, z)), poseNoiseModel));
+
+        outFile << x << "," << y << "," << z << "\n";
     }
 
     // Process binary edges
@@ -106,15 +119,8 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr& msg) {
     if (!localGraph.empty()) {
         gtsam::LevenbergMarquardtParams params;
         params.setVerbosityLM("SUMMARY");
-        
-        ROS_INFO("Checking all necessary keys are present in localInitial...");
-        for (const auto& factor : localGraph) {
-            for (const auto& key : factor->keys()) {
-                if (!localInitial.exists(key)) {
-                    localInitial.insert(key, gtsam::Pose3());
-                }
-            }
-    }
+        std::string homeDir = getenv("HOME");
+        params.setLogFile(homeDir + "/catkin_ws/src/Beyond-NeRF/gtsam/factor_graph_optimizer/optimizer_log.txt");
 
         gtsam::LevenbergMarquardtOptimizer optimizer(localGraph, localInitial, params);
         gtsam::Values result = optimizer.optimize();
