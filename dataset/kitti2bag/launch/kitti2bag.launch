@@ -1,9 +1,9 @@
 <launch>
     <arg name="kitti_dir" default="/data/kitti/raw_data"/>
-    <arg name="date" default="2011_09_29"/>
-    <arg name="drive" default="71"/>
+    <arg name="date" default="2011_09_26"/>
+    <arg name="drive" default="19"/>
     <arg name="output" default="$(find kitti2bag)/output"/>
-    <arg name="kitti_type" default="raw_extract"/>
+    <arg name="kitti_type" default="raw_sync"/>
 
 	<node pkg="kitti2bag" type="main.py" name="kitti2bag_node" output="screen">
         <param name="kitti_dir" type="string" value="$(arg kitti_dir)" />

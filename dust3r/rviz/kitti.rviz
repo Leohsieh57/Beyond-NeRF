@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Image1
       Splitter Ratio: 0.5021008253097534
     Tree Height: 701
   - Class: rviz/Selection
@@ -145,7 +146,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -203,7 +204,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 74.44412994384766
+      Distance: 57.073795318603516
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -211,17 +212,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 18.742326736450195
-        Y: 1.5872411727905273
-        Z: -0.08634404838085175
+        X: 25.67794418334961
+        Y: 1.0192546844482422
+        Z: 3.946509599685669
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2047966718673706
+      Pitch: 0.6047974228858948
       Target Frame: base_link
-      Yaw: 3.3297054767608643
+      Yaw: 2.7896780967712402
     Saved: ~
 Window Geometry:
   Displays:
