@@ -39,9 +39,7 @@ namespace bnerf
         auto gps_timeout = [&t] (auto & msg) {return msg->stamp < t;};
         auto reg_timeout = [&t] (auto & msg) {return msg->start_stamp < t || msg->end_stamp < t;};
 
-        vector<bnerf_msgs::GraphUnaryEdge::ConstPtr>  gps_win;
-        vector<bnerf_msgs::GraphBinaryEdge::ConstPtr> reg_win;
-
+        bnerf_msgs::GraphEdgeCollection msg;
         {
             lock_guard<mutex> lock(gps_mutex_);
             auto iend = remove_if(gps_win_.begin(), gps_win_.end(), gps_timeout);
@@ -49,7 +47,9 @@ namespace bnerf
             if (gps_win_.empty())
                 return;
 
-            gps_win = gps_win_;
+            msg.unary_edges.reserve(gps_win_.size());
+            for (const auto &e : gps_win_)
+                msg.unary_edges.push_back(*e);
         }
 
         {
@@ -59,17 +59,10 @@ namespace bnerf
             if (reg_win_.empty())
                 return;
 
-            reg_win = reg_win_;
+            msg.binary_edges.reserve(reg_win_.size());
+            for (const auto &e : reg_win_)
+                msg.binary_edges.push_back(*e);
         }
-
-        bnerf_msgs::GraphEdgeCollection msg;
-        msg.unary_edges.reserve(gps_win.size());
-        for (const auto &e : gps_win)
-            msg.unary_edges.push_back(*e);
-
-        msg.binary_edges.reserve(reg_win.size());
-        for (const auto &e : reg_win)
-            msg.binary_edges.push_back(*e);
 
         edge_pub_.publish(msg);
     }
