@@ -20,6 +20,9 @@ namespace bnerf
 
         //parameter & node handle stuffs
         private:
+
+        bnerf_msgs::FloorCoeffs::ConstPtr GetFloorCoeffs(const ros::Time &);
+
         message_filters::Subscriber<CloudXYZ> src_cloud_sub_;
         message_filters::Subscriber<bnerf_msgs::FloorCoeffs> src_floor_sub_;
         message_filters::TimeSynchronizer<CloudXYZ, bnerf_msgs::FloorCoeffs> sync_sub_;
