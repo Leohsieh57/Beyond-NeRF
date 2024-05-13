@@ -65,32 +65,8 @@ void IMUCallback(const sensor_msgs::Imu::ConstPtr &msg)
 
 geometry_msgs::Transform integrate_subarray(std::vector<sensor_msgs::Imu> imu_msgs, ros::Time start_time, ros::Time end_time)
 {
-    // dummy change to force buildability
-    std::vector<ros::Time> stamps;
-    // std::vector<ros::Time> stamps = req.stamps;
-    // std::vector<sensor_msgs::Imu> imu_msgs;
-    std::vector<geometry_msgs::Transform> all_transforms;
-
-    for (const auto &stamp : stamps)
-    {
-        bool found = false;
-        for (const auto &imu_msg : globalImuDeque)
-        {
-            if (fabs(imu_msg.header.stamp.toSec() - stamp.toSec()) < 0.001)
-            {
-                imu_msgs.push_back(imu_msg);
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            //res.transforms = all_transforms;
-            // dummy change to force buildability
-            return geometry_msgs::Transform();
-            //return false;
-        }
-    }
+    // lock IMU array so it can't be changed until the function is done
+    std::lock_guard<std::mutex> lock(globalImuDequeMutex);
 
     auto current_bias = imuBias::ConstantBias(); // init with zero bias
     double g = 9.8;
