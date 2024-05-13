@@ -154,15 +154,15 @@ initializer(omp_priv=Vec6d::Zero())
     }
 
 
-    void Optimizer::GetScanMatchingFactor(
-        bnerf_msgs::ScanMatchingFactor & msg) const
+    void Optimizer::GetGraphBinaryEdge(
+        bnerf_msgs::GraphBinaryEdge & msg) const
     {
         const auto target = voxer_->GetInputTarget();
         const auto source = source_;
 
-        pcl_conversions::fromPCL(target->header, msg.target_header);
-        pcl_conversions::fromPCL(source->header, msg.source_header);
-        convert(trans_, msg.transform);
+        pcl_conversions::fromPCL(target->header.stamp, msg.start_stamp);
+        pcl_conversions::fromPCL(source->header.stamp, msg.end_stamp);
+        convert(trans_, msg.mean);
 
         Eigen::SelfAdjointEigenSolver<Mat66d> solver;
         solver.compute(H_);

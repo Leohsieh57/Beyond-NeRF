@@ -1,0 +1,21 @@
+<launch>
+    <!-- <include file="$(find kitti2bag)/launch/replay.launch"/> -->
+    <include file="$(find scan_matcher)/launch/test_kitti.launch">
+        <arg name="visualize" value="false" />
+    </include>
+
+    <node pkg="graph_edge_manager" type="graph_edge_manager_node" name="graph_edge_manager_node" output="screen">
+        <param name="gps/cov_x" type="double" value="1.0" />
+        <param name="gps/cov_y" type="double" value="1.0" />
+        <param name="gps/cov_z" type="double" value="100.0" />
+        <param name="window_span" type="double" value="3.0" />
+        <param name="update_rate" type="double" value="20.0" />
+        <param name="reference_frame" type="string" value="imu_link" />
+        <rosparam param="source_frames">["velo_link"]</rosparam>
+
+        <remap from="~/navsat_fix" to="/kitti/oxts/gps/fix"/>
+        <remap from="~/scan_matching_factor" to="scan_matcher_node/scan_matching_factor"/>
+        
+    </node>
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find graph_edge_manager)/rviz/kitti.rviz" />
+</launch>

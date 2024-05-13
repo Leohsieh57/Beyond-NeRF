@@ -3,11 +3,10 @@
 
 
 #include <ros/ros.h>
-#include <sensor_msgs/NavSatFix.h>
-#include <bnerf_msgs/ScanMatchingFactor.h>
 #include <bnerf_utils/bnerf_utils.h>
 #include <map>
 #include <tf2_ros/transform_listener.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <bnerf_msgs/GraphEdgeCollection.h>
 
 
@@ -20,29 +19,25 @@ namespace bnerf
         void GetAllEdges();
         
         private:
-        void EdgeCollectionCallBack(const ros::TimerEvent &);
-        void NavSatCallBack(const sensor_msgs::NavSatFix &);
-        void ScanMatchingCallBack(const bnerf_msgs::ScanMatchingFactor &);
+        void PublishEdgeCollection(const ros::TimerEvent &);
+        void UnaryEdgeCallBack(const bnerf_msgs::GraphUnaryEdge::ConstPtr &);
+        void BinaryEdgeCallBack(const bnerf_msgs::GraphBinaryEdge::ConstPtr &);
         
         ros::Publisher edge_pub_;
         ros::Timer timer_;
 
-        bool utm_bias_set_;
-        Vec3d utm_bias_;
-        mutex utm_bias_mutex_;
-        Mat33d gps_cov_;
         ros::Duration win_span_;
-
         ros::Subscriber gps_sub_;
-        mutex gps_win_mutex_;
-        vector<pair<ros::Time, Vec3d>> gps_win_;
+        mutex gps_mutex_;
+        vector<bnerf_msgs::GraphUnaryEdge::ConstPtr> gps_win_;
 
         ros::Subscriber reg_sub_;
-        mutex reg_win_mutex_;
-        vector<pair<ros::Time, bnerf_msgs::GraphBinaryEdge>> reg_win_;
+        mutex reg_mutex_;
+        vector<bnerf_msgs::GraphBinaryEdge::ConstPtr> reg_win_;
 
-        string ref_frame_; //the reference frame we run gtsam on, i,e., the gps/imu frame
-        map<string, SE3d> trans_; //transformation to the reference frame
+        string map_frame_; //the reference frame we run gtsam on, i,e., the gps/imu frame
+        string reg_frame_; //the lidar frame
+        SE3d trans_; //transformation to the reference frame
     };
 }
 

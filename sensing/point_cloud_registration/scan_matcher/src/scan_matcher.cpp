@@ -35,7 +35,7 @@ namespace bnerf
             viz_pub_.reset(new ros::Publisher(move(viz_pub)));
         }
 
-        edge_pub_ = nh_.advertise<bnerf_msgs::ScanMatchingFactor>("scan_matching_factor", 16);
+        edge_pub_ = nh_.advertise<bnerf_msgs::GraphBinaryEdge>("registration_binary_edge", 16);
         reg_pub_ = nh_.advertise<bnerf_msgs::ScanMatchingInfo>("scan_matching_info", 16);
         vox_pub_ = nh_.advertise<bnerf_msgs::VoxelizationInfo>("voxelization_info", 16);
         src_sub_ = nh_.subscribe("source_scan", 16, &ScanMatcher::SourceScanCallBack, this);
@@ -79,8 +79,8 @@ namespace bnerf
 
         const auto t2 = ros::Time::now();
         
-        bnerf_msgs::ScanMatchingFactor edge_msg;
-        optim.GetScanMatchingFactor(edge_msg);
+        bnerf_msgs::GraphBinaryEdge edge_msg;
+        optim.GetGraphBinaryEdge(edge_msg);
         edge_pub_.publish(edge_msg);
         
         if (viz_pub_)
