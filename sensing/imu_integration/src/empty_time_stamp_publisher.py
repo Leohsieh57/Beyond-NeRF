@@ -20,6 +20,10 @@ def request_empty_time_stamps():
 
 if __name__ == '__main__':
     rospy.init_node('service_client_node')
+
+    rate = rospy.Rate(10)
     while not rospy.is_shutdown():
         request_empty_time_stamps()
-        rospy.sleep(10)  # Wait for 10 seconds before making the next request
+        rate.sleep()
+
+    rospy.spin()
