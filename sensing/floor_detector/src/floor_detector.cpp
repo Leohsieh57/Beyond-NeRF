@@ -17,8 +17,8 @@ namespace bnerf
         bool visualize;
         GET_OPTIONAL(nh, "visualize", visualize, false);
         GET_REQUIRED(nh, "num_threads", threads_);
-        GET_REQUIRED(nh, "floor_dist_thres", dist_);
-        GET_REQUIRED(nh, "floor_probability", prob_);
+        GET_REQUIRED(nh, "dist_thres", dist_);
+        GET_REQUIRED(nh, "probability", prob_);
 
         if (visualize)
         {
@@ -28,9 +28,8 @@ namespace bnerf
     }
 
 
-    Vec4d FloorDetector::ComputeFloorCoeffs(CloudXYZ::ConstPtr cloud) const
+    void FloorDetector::ScanCallBack(const CloudXYZ::ConstPtr & cloud)
     {
-        // RANSAC
         const auto t1 = ros::Time::now();
         pcl::SampleConsensusModelPlane<PointXYZ>::Ptr model;
         model.reset(new pcl::SampleConsensusModelPlane<PointXYZ>(cloud));
@@ -48,6 +47,16 @@ namespace bnerf
         ransac.getModelCoefficients(coeffs);
         const auto t2 = ros::Time::now();
 
+        bnerf_msgs::FloorDetection floor_msg;
+        pcl_conversions::fromPCL(cloud->header, floor_msg.header);
+
+        for (int i = 0; i < 4; i++)
+            floor_msg.coeffs[i] = coeffs[i];
+
+        inliers->indices.swap(floor_msg.valid_ids);
+        floor_pub_.publish(floor_msg);
+        inliers->indices.swap(floor_msg.valid_ids);
+
         if (scan_pub_)
         {
             CloudXYZI seg_cloud;
@@ -63,15 +72,13 @@ namespace bnerf
             scan_pub_->publish(seg_cloud);
         }
 
-        bnerf_msgs::FloorDetectionInfo msg;
-        pcl_conversions::fromPCL(cloud->header, msg.header);
-        msg.distance_threshold = ransac.getDistanceThreshold();
-        msg.probability = ransac.getProbability();
-        msg.exec_time = t2 - t1;
-        msg.num_threads = ransac.getNumberOfThreads();
-        msg.num_scan_points = cloud->size();
-        info_pub_.publish(msg);
-
-        return coeffs.cast<double>();
+        bnerf_msgs::FloorDetectionInfo info_msg;
+        pcl_conversions::fromPCL(cloud->header, info_msg.header);
+        info_msg.distance_threshold = ransac.getDistanceThreshold();
+        info_msg.exec_time = t2 - t1;
+        info_msg.num_scan_points = cloud->size();
+        info_msg.probability = ransac.getProbability();
+        info_msg.num_threads = ransac.getNumberOfThreads();
+        info_pub_.publish(info_msg);
     }
 }

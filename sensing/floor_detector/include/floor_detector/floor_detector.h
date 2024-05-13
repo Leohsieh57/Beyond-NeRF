@@ -13,7 +13,7 @@ namespace bnerf
     {
         public:
         FloorDetector(ros::NodeHandle & );
-        void ScanCallBack(const CloudXYZ &);
+        void ScanCallBack(const CloudXYZ::ConstPtr &);
         Vec4d ComputeFloorCoeffs(CloudXYZ::ConstPtr) const;
         
         private:

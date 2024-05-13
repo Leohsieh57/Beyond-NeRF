@@ -41,3 +41,6 @@ catkin_package(
     CATKIN_DEPENDS
     bnerf_utils
 )
+
+add_executable(${PROJECT_NAME}_node main.cpp)
+target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME})

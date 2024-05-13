@@ -8,7 +8,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
 find_package(catkin REQUIRED COMPONENTS
     roscpp
     voxelizer
-    floor_detector
 )
 
 include_directories(
@@ -42,7 +41,6 @@ catkin_package(
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
     voxelizer
-    floor_detector
 )
 
 add_executable(${PROJECT_NAME}_node main.cpp)
