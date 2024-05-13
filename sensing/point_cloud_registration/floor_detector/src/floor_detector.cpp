@@ -39,7 +39,6 @@ namespace bnerf
         ransac.setDistanceThreshold(dist_);
         ransac.computeModel();
         
-
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
         ransac.getInliers(inliers->indices);
 

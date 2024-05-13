@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
+import os
 import PIL.Image
 import rospy
 import torch
 import torchvision.transforms as tvf
 import numpy as np
 
-from dust3r.inference import *
+from dust3r.inference import loss_of_one_batch
 from dust3r.utils.image import _resize_pil_image
+from dust3r.utils.device import collate_with_cat
 from dust3r.image_pairs import make_pairs
 from dust3r.model import AsymmetricCroCo3DStereo
-from dust3r.utils.device import collate_with_cat
 
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 from sensor_msgs.point_cloud2 import create_cloud
@@ -23,6 +24,7 @@ import PIL
 class DUSt3RNet:
     def __init__(self, pretrain, device, width, slop):
         self.device = torch.device(device)
+        self.model_name = os.path.basename(pretrain)
         self.model = AsymmetricCroCo3DStereo.from_pretrained(pretrain).to(self.device)
         self.model.eval()
         self.width = width
@@ -41,26 +43,31 @@ class DUSt3RNet:
 
     @torch.no_grad()
     def stereo_call_back(self, img1, img2):
+        torch.cuda.reset_max_memory_allocated(self.device)
+
         t1 = rospy.Time.now()
         batch = self.prepare_batch(img1, img2)
         cloud = self.predict_point_cloud(batch)
-        dt = img2.header.stamp - img1.header.stamp
         t2 = rospy.Time.now()
 
+        dt = img2.header.stamp - img1.header.stamp
         cloud.header = img1.header
         cloud.header.stamp += dt * 0.5
         self.scan_pub.publish(cloud)
 
         msg = DUSt3RInfo()
-        msg.exec_time = t2 - t1
         msg.header = cloud.header
+        msg.exec_time = t2-t1
+        msg.memory_usage = torch.cuda.max_memory_allocated(self.device)
+        msg.memory_usage /= 1024**3
+        msg.model_name = self.model_name
         self.info_pub.publish(msg)
 
 
     def predict_point_cloud(self, batch):
         res = loss_of_one_batch(batch, self.model, None, self.device)
+
         pred1, pred2 = res['pred1'], res['pred2']
-        
         xyz = [pred1['pts3d'], pred2['pts3d_in_other_view']]
         xyz = [x.detach().cpu().numpy() for x in xyz]
         xyz = np.vstack(xyz)
@@ -70,7 +77,8 @@ class DUSt3RNet:
         conf = np.expand_dims(np.vstack(conf), axis=-1)
 
         xyzi = np.concatenate([xyz, conf], axis=-1).reshape((-1, 4))
-        return create_cloud(Header(), self.fields, xyzi)
+        cloud = create_cloud(Header(), self.fields, xyzi)
+        return cloud
 
 
     def prepare_batch(self, img1, img2):

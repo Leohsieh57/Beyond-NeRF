@@ -108,8 +108,8 @@ namespace bnerf
         info_msg.header = filtered_msg.header;
         info_msg.filter_name = use_approx_? "approximate_voxel_grid": "voxel_grid";
         info_msg.exec_time.fromNSec(nsecs);
+        info_msg.num_scan_points = raw_scan_msg.width;
         info_msg.num_filtered_points = filtered_msg.width;
-        info_msg.num_raw_scan_points = raw_scan_msg.width;
         info_pub_.publish(info_msg);
     }
 }

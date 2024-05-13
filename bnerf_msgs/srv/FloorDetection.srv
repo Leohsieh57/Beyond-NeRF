@@ -1,0 +1,7 @@
+sensor_msgs/PointCloud2 cloud
+uint8 type
+uint8 LIDAR=0
+uint8 DUST3R=1
+---
+int32[] valid_ids
+float32[4] floor_coeffs
