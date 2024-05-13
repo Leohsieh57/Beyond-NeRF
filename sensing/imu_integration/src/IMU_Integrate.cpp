@@ -44,7 +44,8 @@ Vector3 toVector3(const geometry_msgs::Vector3 &v)
 // store IMU msgs in time order
 void IMUCallback(const sensor_msgs::Imu::ConstPtr &msg)
 {
-    ROS_INFO("Received IMU message.");
+    // ROS_INFO("Received IMU message.");
+    std::cout << "Received IMU message with timestamp: " << msg->header.stamp << std::endl;
     // wait until we are allowed to edit the IMU array
     std::lock_guard<std::mutex> lock(globalImuDequeMutex);
 
@@ -164,8 +165,7 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         std::lock_guard<std::mutex> lock(globalImuDequeMutex);
         localImus.assign(globalImuDeque.begin(), globalImuDeque.end());
     }
-    
-    
+
     if (localImus.size() < 20)
     {
         LOG(ERROR) << "imu size (" << localImus.size() << ") too low, skipping.. ";
@@ -179,11 +179,18 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         auto t2 = localImus.back().header.stamp;
 
         int resolution = 10;
-        auto dt = (t2 - t1) * double(1/resolution);
+        auto dt = (t2 - t1) * double(1 / resolution);
         stamps = {t1};
         for (int i = 0; i < resolution; i++)
             stamps.push_back(stamps.back() + dt);
     }
+
+    // ROS_INFO("STAMPS:");
+
+    // for (const auto &stamp : stamps)
+    // {
+    //     std::cout << stamp << std::endl;
+    // }
 
     // make our subarrays between each 2 consecutive timestamps
     for (size_t i = 0; i < stamps.size() - 1; ++i)
@@ -202,6 +209,8 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
                 break; // deque is sorted
             }
         }
+
+        LOG(ERROR) << "subarray: " << subarray.size() << "";
 
         bnerf_msgs::GraphBinaryEdge edge;
         geometry_msgs::Transform transform;
@@ -234,7 +243,7 @@ int main(int argc, char **argv)
 {
     FLAGS_colorlogtostderr = true;
     google::InstallFailureSignalHandler();
-    
+
     ros::init(argc, argv, "imu_listener_node");
     ros::NodeHandle nh;
 

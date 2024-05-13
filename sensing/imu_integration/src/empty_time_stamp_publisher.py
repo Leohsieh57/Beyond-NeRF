@@ -13,7 +13,7 @@ def request_empty_time_stamps():
         # request.stamps = [rospy.Time.now()]  # Set the stamps field to a list containing the current time
         response = integrate_imu(request)
         print("Received response at:", rospy.Time.now())
-        print(response.edges)
+        # print(response.edges)
         rospy.loginfo("Received edges")
     except rospy.ServiceException as e:
         rospy.logerr("Service call failed: %s", e)
