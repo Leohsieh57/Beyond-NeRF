@@ -70,22 +70,19 @@ class DUSt3RNet:
 
         pred1, pred2 = res['pred1'], res['pred2']
         xyz = [pred1['pts3d'], pred2['pts3d_in_other_view']]
-        xyz = [x.detach().cpu().numpy() for x in xyz]
-        xyz = np.vstack(xyz)
+        xyz = [x.detach().cpu() for x in xyz]
+        xyz = torch.vstack(xyz)
 
         conf = [pred1['conf'], pred2['conf']]
-        conf = [x.detach().cpu().numpy() for x in conf]
-        conf = np.expand_dims(np.vstack(conf), axis=-1)
-
+        conf = [x.detach().cpu() for x in conf]
+        conf = torch.vstack(conf)
         valid_ids = conf > self.min_conf
-        print(xyz.shape, conf.shape)
-        conf = conf[valid_ids]
-        print(xyz.shape, conf.shape)
-        xyz = xyz[valid_ids]
-        print(xyz.shape, conf.shape)
 
-        xyzi = np.concatenate([xyz, conf], axis=-1)
-        cloud = create_cloud(Header(), self.fields, xyzi)
+        conf = conf.unsqueeze(-1)[valid_ids]
+        xyz = xyz[valid_ids]
+
+        xyzi = torch.cat([xyz, conf], axis=-1)
+        cloud = create_cloud(Header(), self.fields, xyzi.reshape(-1, 4).numpy())
         return cloud
 
 
