@@ -1,7 +1,7 @@
-time source_stamp
+time source_stamp # transformation from source to target
 time target_stamp
 
-geometry_msgs/Transform mean
+geometry_msgs/Transform mean # mean measurement of transformation
 float64[36] covariance
 
 uint8 type
