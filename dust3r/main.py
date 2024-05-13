@@ -20,7 +20,6 @@ from bnerf_msgs.msg import DUSt3RInfo
 import PIL
 
 
-
 class DUSt3RNet:
     def __init__(self, pretrain, device, width, slop):
         self.device = torch.device(device)
@@ -62,14 +61,16 @@ class DUSt3RNet:
         res = loss_of_one_batch(batch, self.model, None, self.device)
         pred1, pred2 = res['pred1'], res['pred2']
         
-        xyz = [pred1['pts3d'][0], pred2['pts3d_in_other_view'][0]]
-        xyz = torch.cat(xyz, dim=0)
+        xyz = [pred1['pts3d'], pred2['pts3d_in_other_view']]
+        xyz = [x.detach().cpu().numpy() for x in xyz]
+        xyz = np.vstack(xyz)
 
-        conf = [pred1['conf'][0], pred2['conf'][0]]
-        conf = torch.cat(conf, dim=0).unsqueeze(-1)
-        xyzi = torch.cat([xyz, conf], dim=-1).reshape(-1, 4)
+        conf = [pred1['conf'], pred2['conf']]
+        conf = [x.detach().cpu().numpy() for x in conf]
+        conf = np.expand_dims(np.vstack(conf), axis=-1)
 
-        return create_cloud(Header(), self.fields, xyzi.detach().cpu().numpy())
+        xyzi = np.concatenate([xyz, conf], axis=-1).reshape((-1, 4))
+        return create_cloud(Header(), self.fields, xyzi)
 
 
     def prepare_batch(self, img1, img2):
@@ -95,6 +96,7 @@ class DUSt3RNet:
 
         img_to_view(img1)
         img_to_view(img2)
+
         return collate_with_cat(make_pairs(views, symmetrize=False))
 
 
