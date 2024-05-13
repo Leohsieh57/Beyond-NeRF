@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   bnerf_msgs
   roscpp
   sensor_msgs
+  rospy
 )
 
 find_package(GTSAM REQUIRED)
