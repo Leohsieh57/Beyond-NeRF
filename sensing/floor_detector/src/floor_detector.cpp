@@ -25,6 +25,8 @@ namespace bnerf
             auto pub = nh.advertise<CloudXYZI>("floor_segmentation", 128);
             scan_pub_.reset(new ros::Publisher(move(pub)));
         }
+
+        scan_sub_ = nh.subscribe("input_scan", 32, &FloorDetector::ScanCallBack, this);
     }
 
 

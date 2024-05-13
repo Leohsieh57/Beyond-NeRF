@@ -109,7 +109,7 @@ class DUSt3RNet:
 
 
 if __name__ == '__main__':
-    rospy.init_node('dust3r_node')
+    rospy.init_node('dust3r_stereo_node')
 
     kwargs = rospy.get_param('~')
     dust3r = DUSt3RNet(**kwargs)

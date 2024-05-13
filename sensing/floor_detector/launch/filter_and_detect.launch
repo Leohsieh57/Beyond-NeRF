@@ -1,0 +1,23 @@
+<launch>
+    <arg name="ns"/>
+    <arg name="raw_scan_topic"/>
+    <arg name="dist_thres"/>
+    <arg name="num_threads"/>
+    <arg name="probability" default="0.99"/>
+    <arg name="visualize" default="false"/>
+    <arg name="filter_leaf"/>
+
+    <node pkg="voxel_grid_filter" type="voxel_grid_filter_node" name="$(arg ns)_filter_node" output="screen">
+        <param name="leaf_size" type="double" value="$(arg filter_leaf)" />
+        <param name="use_approx" type="bool" value="true" />
+        <remap from="~/raw_scan" to="$(arg raw_scan_topic)"/>
+    </node>
+
+    <node pkg="floor_detector" type="floor_detector_node" name="$(arg ns)_floor_node" output="screen">
+        <param name="visualize"   value="$(arg visualize)" />
+        <param name="dist_thres"  value="$(arg dist_thres)" />
+        <param name="num_threads" value="$(arg num_threads)" />
+        <param name="probability" value="$(arg probability)" />
+        <remap from="~/input_scan" to="/$(arg ns)_filter_node/filtered_points"/>
+    </node>
+</launch>
