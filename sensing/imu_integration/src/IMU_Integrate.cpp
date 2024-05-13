@@ -224,7 +224,7 @@ int main(int argc, char **argv)
     // TODO: Replace "/imu_topic" with the actual name of the topic
     ros::Subscriber sub = nh.subscribe("/kitti/oxts/imu", 1000, IMUCallback);
 
-    ros::ServiceServer service = nh.advertiseService("topic_name", integrate);
+    ros::ServiceServer service = nh.advertiseService("integrate_imu", integrate);
 
     ros::spin();
 

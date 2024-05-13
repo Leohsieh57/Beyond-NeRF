@@ -1,0 +1,21 @@
+<launch>
+    <param name="use_sim_time" value="true" />
+	<arg name="imu_bag" value="$(find kitti2bag)/output/imu.bag"/>
+    <node pkg="rosbag" type="play" name="kitti_replay_node" output="log" 
+        args="--clock --hz=1000000 $(arg imu_bag)"/>
+
+    <node pkg="imu_integration" type="imu_integration_node" name="imu_integration_node" output="screen">
+        <!-- <param name="leaf_size" type="double" value="1" />
+        <param name="use_approx" type="bool" value="false" />
+        <remap from="~/raw_scan" to="/velodyne_points"/> -->
+    </node>
+
+    <node pkg="imu_integration" type="empty_time_stamp_publisher.py" name="stamp_publisher" output="screen">
+        <!-- <param name="leaf_size" type="double" value="1" />
+        <param name="use_approx" type="bool" value="false" />
+        <remap from="~/raw_scan" to="/velodyne_points"/> -->
+    </node>
+
+    <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(find graph_visualizer)/rviz/test_kitti.rviz" /> -->
+
+</launch>

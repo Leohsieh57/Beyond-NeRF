@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import rospy
-from bnerf_msgs.srv import IntegrateIMURequest, IntegrateIMUResponse
+from bnerf_msgs.srv import IntegrateIMURequest, IntegrateIMUResponse, IntegrateIMU
 from bnerf_msgs.msg import GraphBinaryEdge
 
 def request_empty_time_stamps():
