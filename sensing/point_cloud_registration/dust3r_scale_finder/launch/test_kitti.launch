@@ -1,0 +1,29 @@
+<launch>
+    <include file="$(find kitti2bag)/launch/replay.launch"/>
+
+    <node pkg="voxel_grid_filter" type="voxel_grid_filter_node" name="voxel_grid_filter_node" output="screen">
+        <param name="leaf_size" type="double" value="0.4" />
+        <param name="use_approx" type="bool" value="false" />
+        <remap from="~/raw_scan" to="/kitti/velo/pointcloud"/>
+    </node>
+    
+    <arg name="solver" default="gicp"/>
+    <arg name="visualize" default="false"/>
+    <arg name="is_ndt" value="$(eval arg('solver') == 'ndt')"/>
+
+    <arg if="$(eval arg('solver') == 'ndt')" name="target_topic" value="/kitti/velo/pointcloud" />
+    <arg if="$(eval arg('solver') != 'ndt')" name="target_topic" value="/voxel_grid_filter_node/filtered_points" />
+
+    <node pkg="scan_matcher" type="scan_matcher_node" name="scan_matcher_node" output="screen">
+        <rosparam file="$(find scan_matcher)/cfg/$(arg solver).yaml" />
+        <param name="visualize" type="bool" value="$(arg visualize)" />
+        <param name="verbose" type="bool" value="false" />
+        <param name="floor_dist_thres" type="double" value="0.1" />
+        <param name="floor_probability" type="double" value="0.98" />
+        
+        <param name="solver" type="string" value="$(arg solver)" />
+        <remap from="~/target_scan" to="$(arg target_topic)"/>
+        <remap from="~/source_scan" to="/voxel_grid_filter_node/filtered_points"/>
+    </node>
+	<node if="$(eval arg('visualize'))" pkg="rviz" type="rviz" name="rviz" args="-d $(find scan_matcher)/rviz/kitti.rviz" />
+</launch>

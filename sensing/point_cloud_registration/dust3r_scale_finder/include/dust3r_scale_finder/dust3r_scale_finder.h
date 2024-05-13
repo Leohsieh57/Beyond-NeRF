@@ -1,28 +1,21 @@
-#ifndef __SCAN_MATCHER_H__
-#define __SCAN_MATCHER_H__
+#ifndef __BNERF_DUST3R_RESCALER_H__
+#define __BNERF_DUST3R_RESCALER_H__
 
 
+#include <bnerf_utils/typedef.h>
 #include <voxelizer/voxelizer.h>
-#include <scan_matcher/optimizer.h>
-#include <bnerf_utils/bnerf_utils.h>
+#include <bnerf_msgs/ScanMatchingInfo.h>
+#include <bnerf_msgs/ScanMatchingFactor.h>
+
 
 namespace bnerf
 {
-    class ScanMatcher
+    class DUSt3RScaleFinder
     {
         public: 
-        ScanMatcher();
+        DUSt3RScaleFinder(ros::NodeHandle &);
         void SourceScanCallBack(const CloudXYZ::ConstPtr &);
         void TargetScanCallBack(const CloudXYZ::ConstPtr &);
-
-        private:
-        Voxelizer::ConstPtr GetVoxelizer(CloudXYZ::ConstPtr);
-
-        //registrator stuffs
-        private:
-        ros::NodeHandle nh_;
-        mutex vox_mutex_;
-        vector<Voxelizer::ConstPtr> vox_win_;
 
         //parameter & node handle stuffs
         private:

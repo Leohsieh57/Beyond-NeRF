@@ -92,7 +92,6 @@ class DUSt3RNet:
         views = []
         def img_to_view(img):
             img = bridge.imgmsg_to_cv2(img, desired_encoding='passthrough')
-            H, W, C = img.shape
 
             img = PIL.Image.fromarray(img) 
             img =_resize_pil_image(img, self.width)
