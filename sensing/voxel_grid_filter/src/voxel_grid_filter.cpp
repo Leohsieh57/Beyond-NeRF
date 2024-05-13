@@ -60,9 +60,9 @@ namespace bnerf
         square_min_range_ *= square_min_range_;
         square_max_range_ *= square_max_range_;
 
-        scan_pub_ = nh.advertise<sensor_msgs::PointCloud2>("filtered_points", 100);
-        info_pub_ = nh.advertise<bnerf_msgs::VoxelGridFilterInfo>("info", 1000);
-        scan_sub_ = nh.subscribe("raw_scan", 100, &VoxelGridFilter::ScanCallBack, this);
+        scan_pub_ = nh.advertise<sensor_msgs::PointCloud2>("filtered_points", 128);
+        info_pub_ = nh.advertise<bnerf_msgs::VoxelGridFilterInfo>("info", 1024);
+        scan_sub_ = nh.subscribe("raw_scan", 128, &VoxelGridFilter::ScanCallBack, this);
     }
 
 

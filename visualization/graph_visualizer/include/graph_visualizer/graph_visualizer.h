@@ -7,7 +7,7 @@
 #include <bnerf_utils/typedef.h>
 #include <bnerf_utils/ros/publisher.hpp>
 #include <bnerf_msgs/GraphIterationStatus.h>
-#include <tf2_ros//transform_listener.h>
+#include <tf2_ros/transform_listener.h>
 
 
 namespace bnerf

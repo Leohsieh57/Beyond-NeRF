@@ -35,6 +35,7 @@ namespace bnerf {
     typedef Eigen::Vector3i Vec3i;
     typedef Eigen::Vector4i Vec4i;
     typedef Eigen::Matrix3d Mat33d;
+    typedef Eigen::Matrix4d Mat44d;
     typedef Eigen::Matrix4f Mat44f;
     typedef Eigen::Matrix3Xi Mat3Xi;
     typedef Eigen::Quaterniond Quatd;

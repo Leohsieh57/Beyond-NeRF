@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>stereo_rescaler</name>
+    <version>0.0.0</version>
+    <description>stereo_rescaler</description>
+    <maintainer email="bardiche4768@todo.todo">bardiche4768</maintainer>
+
+    <license>TODO</license>
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <build_depend>bnerf_utils</build_depend>
+    <exec_depend>bnerf_utils</exec_depend>
+    <build_export_depend>bnerf_utils</build_export_depend>
+
+    <export>
+    </export>
+</package>

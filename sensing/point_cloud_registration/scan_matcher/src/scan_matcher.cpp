@@ -12,7 +12,6 @@ namespace bnerf
 {
     ScanMatcher::ScanMatcher()
         : nh_("~")
-        , floor_detector_(nh_)
     {
         GET_REQUIRED(nh_, "max_iters", max_iters_);
         GET_OPTIONAL(nh_, "verbose", verbose_, false);
@@ -136,8 +135,6 @@ namespace bnerf
 
         auto msg = voxer->SetInputTarget(target);
         vox_pub_.publish(msg);
-
-        floor_detector_.ComputeFloorCoeffs(target);
 
         auto t = voxer->GetStamp() - vox_win_span_;
         auto timeout = [&t](Voxelizer::ConstPtr vox) {return vox->GetStamp() < t; };

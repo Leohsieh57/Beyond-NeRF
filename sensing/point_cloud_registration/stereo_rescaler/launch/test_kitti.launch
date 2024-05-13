@@ -18,8 +18,25 @@
         <arg name="dist_thres" value="0.005"/>
         <arg name="filter_leaf" value="0.01"/>
         <arg name="num_threads" value="4"/>
-        <arg name="visualize" value="true"/>
+    </include>
+
+    <include file="$(find floor_detector)/launch/filter_and_detect.launch">
+        <arg name="ns" value="velodyne"/>
+        <arg name="raw_scan_topic" value="/kitti/velo/pointcloud"/>
+        <arg name="dist_thres" value="0.1"/>
+        <arg name="filter_leaf" value="0.4"/>
+        <arg name="num_threads" value="1"/>
     </include>
     
+    <node pkg="stereo_rescaler" type="stereo_rescaler_node" name="stereo_rescaler_node" output="screen">
+        <param name="lidar_frame" value="velo_link" />
+        <param name="stereo_frame" value="camera_color_left" />
+        <param name="window_span" value="1.0" />
+        
+        <remap from="~/dust3r_cloud" to="/dust3r_filter_node/filtered_points"/>
+        <remap from="~/dust3r_floor" to="/dust3r_floor_node/floor"/>
+        <remap from="~/lidar_floor" to="/velodyne_floor_node/floor"/>
+    </node>
+
 	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find dust3r)/rviz/kitti.rviz" />
 </launch>

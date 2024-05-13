@@ -70,7 +70,6 @@ namespace bnerf
         }
 
 
-
         {
             lock_guard<mutex> lock(reg_win_mutex_);
             auto iend = remove_if(reg_win_.begin(), reg_win_.end(), timeout);

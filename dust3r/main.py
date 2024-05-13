@@ -22,7 +22,7 @@ import PIL
 
 
 class DUSt3RNet:
-    def __init__(self, pretrain, device, width, slop):
+    def __init__(self, pretrain, device, width, slop, min_confidence):
         self.device = torch.device(device)
         self.model_name = os.path.basename(pretrain)
         self.model = AsymmetricCroCo3DStereo.from_pretrained(pretrain).to(self.device)
@@ -34,6 +34,7 @@ class DUSt3RNet:
         self.sync.registerCallback(self.stereo_call_back)
 
         self.img_norm = tvf.Compose([tvf.ToTensor(), tvf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        self.min_conf = min_confidence
         self.scan_pub = rospy.Publisher('~dust3r_cloud', PointCloud2, queue_size=10)
         self.info_pub = rospy.Publisher('~dust3r_info', DUSt3RInfo, queue_size=10)
 
@@ -69,15 +70,19 @@ class DUSt3RNet:
 
         pred1, pred2 = res['pred1'], res['pred2']
         xyz = [pred1['pts3d'], pred2['pts3d_in_other_view']]
-        xyz = [x.detach().cpu().numpy() for x in xyz]
-        xyz = np.vstack(xyz)
+        xyz = [x.detach().cpu() for x in xyz]
+        xyz = torch.vstack(xyz)
 
         conf = [pred1['conf'], pred2['conf']]
-        conf = [x.detach().cpu().numpy() for x in conf]
-        conf = np.expand_dims(np.vstack(conf), axis=-1)
+        conf = [x.detach().cpu() for x in conf]
+        conf = torch.vstack(conf)
+        valid_ids = conf > self.min_conf
 
-        xyzi = np.concatenate([xyz, conf], axis=-1).reshape((-1, 4))
-        cloud = create_cloud(Header(), self.fields, xyzi)
+        conf = conf.unsqueeze(-1)[valid_ids]
+        xyz = xyz[valid_ids]
+
+        xyzi = torch.cat([xyz, conf], axis=-1)
+        cloud = create_cloud(Header(), self.fields, xyzi.reshape(-1, 4).numpy())
         return cloud
 
 
@@ -87,7 +92,6 @@ class DUSt3RNet:
         views = []
         def img_to_view(img):
             img = bridge.imgmsg_to_cv2(img, desired_encoding='passthrough')
-            H, W, C = img.shape
 
             img = PIL.Image.fromarray(img) 
             img =_resize_pil_image(img, self.width)
@@ -109,7 +113,7 @@ class DUSt3RNet:
 
 
 if __name__ == '__main__':
-    rospy.init_node('dust3r_node')
+    rospy.init_node('dust3r_stereo_node')
 
     kwargs = rospy.get_param('~')
     dust3r = DUSt3RNet(**kwargs)

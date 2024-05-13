@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 
-project(floor_detector)
+project(stereo_rescaler)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
