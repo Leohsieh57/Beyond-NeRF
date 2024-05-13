@@ -22,7 +22,6 @@
 #include <glog/logging.h>
 #include <gtsam/slam/PriorFactor.h> // unary factor
 
-std::mutex initial_mutex;
 gtsam::Values initial;
 gtsam::NonlinearFactorGraph graph; // global graph
 std::unordered_map<std::string, int> time_to_key_map;
@@ -68,7 +67,11 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr& msg) {
         double z = unary_edge.mean.z;
         std::string timestamp = std::to_string(unary_edge.stamp.toSec());
         
+        
+        ROS_INFO("Generating new key for timestamp %s. Current key: %d", timestamp.c_str(), current_key);
         int key = ensureKeyExists(timestamp, localInitial, gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(x, y, z)));
+        ROS_INFO("Key for timestamp %s is %d", timestamp.c_str(), key);
+
         localGraph.add(gtsam::PriorFactor<gtsam::Pose3>(gtsam::Symbol('x', key), gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(x, y, z)), poseNoiseModel));
     }
 
@@ -101,84 +104,67 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr& msg) {
     }
 
     if (!localGraph.empty()) {
-        std::lock_guard<std::mutex> lock(initial_mutex);
-        graph.push_back(localGraph);
-        initial.insert(localInitial);
-        updatesSinceLastOptimization++;
+        gtsam::LevenbergMarquardtParams params;
+        params.setVerbosityLM("SUMMARY");
+        
+        ROS_INFO("Checking all necessary keys are present in localInitial...");
+        for (const auto& factor : localGraph) {
+            for (const auto& key : factor->keys()) {
+                if (!localInitial.exists(key)) {
+                    localInitial.insert(key, gtsam::Pose3());
+                }
+            }
+    }
+
+        gtsam::LevenbergMarquardtOptimizer optimizer(localGraph, localInitial, params);
+        gtsam::Values result = optimizer.optimize();
+
+        // Publish the results
+        bnerf_msgs::GraphIterationStatus status_msg;
+        status_msg.graph_stamps.reserve(100);
+        status_msg.graph_states.reserve(100);
+
+        // Populate graph states for publishing
+        for (const auto& key_value : result) {
+            gtsam::Symbol key(key_value.key);
+            gtsam::Pose3 pose = result.at<gtsam::Pose3>(key);
+
+            geometry_msgs::Pose pose_msg;
+            pose_msg.position.x = pose.x();
+            pose_msg.position.y = pose.y();
+            pose_msg.position.z = pose.z();
+            auto quat = pose.rotation().toQuaternion();
+            pose_msg.orientation.x = quat.x();
+            pose_msg.orientation.y = quat.y();
+            pose_msg.orientation.z = quat.z();
+            pose_msg.orientation.w = quat.w();
+            status_msg.graph_states.push_back(pose_msg);
+        }
+
+        status_pub.publish(status_msg);
+        ROS_INFO("Optimizer has run. Final results published.");
     }
 
     if (count > 0) {
         double averageError = totalError / count;
-        LOG(INFO) << "Average Error: " << averageError;
+        ROS_INFO("Average Error: %f", averageError);
     }
 }
 
 
 int main(int argc, char **argv) {
+    // Initialize the ROS node
     ros::init(argc, argv, "transformation_listener");
     ros::NodeHandle nh;
 
+    // Initialize subscriber to the graph edge collection topic
     ros::Subscriber sub = nh.subscribe("/graph_edge_manager_node/graph_edge_collection", 1000, EdgeCallBack);
+
+    // Initialize publisher for the graph iteration status
     status_pub = nh.advertise<bnerf_msgs::GraphIterationStatus>("graph_status", 10);
 
-    ros::Rate rate(10.0);
-    while (ros::ok()) {
-        ros::spinOnce();
-        ROS_ERROR("Updates since last optimization: %d", updatesSinceLastOptimization);
+    // Spin to continuously process incoming messages
+    ros::spin();
 
-        if (updatesSinceLastOptimization >= 5) {
-            std::lock_guard<std::mutex> lock(initial_mutex);
-            bnerf_msgs::GraphIterationStatus status_msg;
-            ROS_ERROR("Condition met, running optimizer...");
-
-            gtsam::LevenbergMarquardtParams params;
-            params.setVerbosityLM("SUMMARY");
-            status_msg.graph_stamps.reserve(100);  // Reserve space if expecting many iterations
-            status_msg.graph_states.reserve(100);
-
-            try {
-                auto start_time = std::chrono::high_resolution_clock::now(); // Start time capture
-                gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial, params);
-                gtsam::Values result = optimizer.optimize();
-                auto end_time = std::chrono::high_resolution_clock::now();  // End time capture
-                auto exec_time = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-
-                status_msg.exec_time = ros::Duration(exec_time.count() / 1000000.0);
-                status_msg.iteration = iteration_count++;
-
-                // Populate graph states
-                for (const auto& key_value : result) {
-                    gtsam::Symbol key(key_value.key);
-                    gtsam::Pose3 pose = result.at<gtsam::Pose3>(key);
-
-                    geometry_msgs::Pose pose_msg;
-                    pose_msg.position.x = pose.x();
-                    pose_msg.position.y = pose.y();
-                    pose_msg.position.z = pose.z();
-                    auto quat = pose.rotation().toQuaternion();
-                    pose_msg.orientation.x = quat.x();
-                    pose_msg.orientation.y = quat.y();
-                    pose_msg.orientation.z = quat.z();
-                    pose_msg.orientation.w = quat.w();
-                    status_msg.graph_states.push_back(pose_msg);
-                }
-
-                status_pub.publish(status_msg); // Publish the status message
-                ROS_ERROR("Optimizer has run. Final results below:");
-                result.print("Final results");
-
-                initial = result; // Update initial estimates with optimized values
-                last_pub_time = ros::Time::now(); // Update last publication time
-                updatesSinceLastOptimization = 0;
-
-                // Reset cumulative error calculation after successful optimization
-                totalError = 0.0;
-                count = 0;
-            } catch (const std::exception& e) {
-                ROS_ERROR("Exception during optimization: %s", e.what());
-            }
-        }
-        rate.sleep();
-    }
     return 0;
 }
