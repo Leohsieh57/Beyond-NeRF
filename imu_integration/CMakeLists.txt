@@ -9,6 +9,10 @@ project(imu_integration)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   bnerf_utils
+  geometry_msgs
+  bnerf_msgs
+  roscpp
+  sensor_msgs
 )
 
 find_package(GTSAM REQUIRED)

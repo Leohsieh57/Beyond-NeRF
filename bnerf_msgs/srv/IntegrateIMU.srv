@@ -1,3 +1,4 @@
 time[] stamps
 ---
 geometry_msgs/Transform[] transforms
+bool[] validities
