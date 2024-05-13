@@ -71,7 +71,6 @@ void IMUCallback(const sensor_msgs::Imu::ConstPtr &msg)
 geometry_msgs::Transform integrate_subarray(std::vector<sensor_msgs::Imu> imu_msgs, ros::Time start_time, ros::Time end_time)
 {
     // lock IMU array so it can't be changed until the function is done
-    std::lock_guard<std::mutex> lock(globalImuDequeMutex);
 
     auto current_bias = imuBias::ConstantBias(); // init with zero bias
     double g = 9.8;
@@ -160,16 +159,30 @@ geometry_msgs::Transform integrate_subarray(std::vector<sensor_msgs::Imu> imu_ms
 
 bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU::Response &res)
 {
+    std::vector<sensor_msgs::Imu> localImus;
+    {
+        std::lock_guard<std::mutex> lock(globalImuDequeMutex);
+        localImus.assign(globalImuDeque.begin(), globalImuDeque.end());
+    }
+    
+    
+    if (localImus.size() < 20)
+    {
+        LOG(ERROR) << "imu size (" << localImus.size() << ") too low, skipping.. ";
+        return false;
+    }
+
     std::vector<ros::Time> stamps = req.stamps;
     if (stamps.empty())
     {
-        auto t1 = globalImuDeque.front().header.stamp;
-        auto t2 = globalImuDeque.back().header.stamp;
+        auto t1 = localImus.front().header.stamp;
+        auto t2 = localImus.back().header.stamp;
 
         int resolution = 10;
         auto dt = (t2 - t1) * double(1/resolution);
-        while (t1 < t2)
-            stamps.push_back(t1 += dt);
+        stamps = {t1};
+        for (int i = 0; i < resolution; i++)
+            stamps.push_back(stamps.back() + dt);
     }
 
     // make our subarrays between each 2 consecutive timestamps
@@ -178,7 +191,7 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         std::vector<sensor_msgs::Imu> subarray;
 
         // Find all the messages between the two timestamps
-        for (const auto &imu_msg : globalImuDeque)
+        for (const auto &imu_msg : localImus)
         {
             if (imu_msg.header.stamp >= stamps[i] && imu_msg.header.stamp < stamps[i + 1])
             {
