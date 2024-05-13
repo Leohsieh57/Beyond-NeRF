@@ -13,6 +13,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <glog/logging.h>
 
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
@@ -218,6 +219,9 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
 
 int main(int argc, char **argv)
 {
+    FLAGS_colorlogtostderr = true;
+    google::InstallFailureSignalHandler();
+    
     ros::init(argc, argv, "imu_listener_node");
     ros::NodeHandle nh;
 

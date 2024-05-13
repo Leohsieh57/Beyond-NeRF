@@ -10,7 +10,7 @@ def request_empty_time_stamps():
         print("Sending request at:", rospy.Time.now())
         integrate_imu = rospy.ServiceProxy('/integrate_imu', IntegrateIMU)
         request = IntegrateIMURequest()
-        request.stamps = [rospy.Time.now()]  # Set the stamps field to a list containing the current time
+        # request.stamps = [rospy.Time.now()]  # Set the stamps field to a list containing the current time
         response = integrate_imu(request)
         print("Received response at:", rospy.Time.now())
         print(response.edges)
