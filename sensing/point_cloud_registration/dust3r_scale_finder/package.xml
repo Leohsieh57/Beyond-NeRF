@@ -1,20 +1,16 @@
 <?xml version="1.0"?>
 <package format="2">
-    <name>scan_matcher</name>
+    <name>dust3r_scale_finder</name>
     <version>0.0.0</version>
-    <description>scan_matcher</description>
+    <description>dust3r_scale_finder</description>
     <maintainer email="bardiche4768@todo.todo">bardiche4768</maintainer>
 
     <license>TODO</license>
     <buildtool_depend>catkin</buildtool_depend>
 
-    <build_depend>roscpp</build_depend>
-    <exec_depend>roscpp</exec_depend>
-    <build_export_depend>roscpp</build_export_depend>
-
-    <build_depend>voxelizer</build_depend>
-    <exec_depend>voxelizer</exec_depend>
-    <build_export_depend>voxelizer</build_export_depend>
+    <build_depend>bnerf_utils</build_depend>
+    <exec_depend>bnerf_utils</exec_depend>
+    <build_export_depend>bnerf_utils</build_export_depend>
 
     <export>
     </export>
