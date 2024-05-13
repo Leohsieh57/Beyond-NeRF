@@ -61,7 +61,7 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         }
         if (!found)
         {
-            res.transforms = all_transforms; // Return empty transform
+            //res.transforms = all_transforms;
             return false;
         }
     }
@@ -128,7 +128,7 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         current_summarized_measurement->resetIntegration();
     }
 
-    res.transforms = all_transforms;
+    //res.transforms = all_transforms;
     return true;
 }
 

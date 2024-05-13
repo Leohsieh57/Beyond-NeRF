@@ -134,13 +134,13 @@ namespace bnerf
 
         bnerf_msgs::GraphBinaryEdge egde_msg;
         convert(trans, egde_msg.mean);
-        egde_msg.source_stamp = msg.source_header.stamp;
-        egde_msg.target_stamp = msg.target_header.stamp;
+        egde_msg.start_stamp = msg.target_header.stamp;
+        egde_msg.end_stamp = msg.source_header.stamp;
 
         Mat66d cov = Mat66d::Identity();
         copy_n(cov.data(), 36, egde_msg.covariance.data());
 
-        const auto t = min(egde_msg.source_stamp, egde_msg.target_stamp);
+        const auto t = min(egde_msg.start_stamp, egde_msg.end_stamp);
 
         lock_guard<mutex> lock(reg_win_mutex_);
         reg_win_.emplace_back(t, egde_msg);

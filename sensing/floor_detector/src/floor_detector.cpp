@@ -5,12 +5,14 @@
 #include <pcl/sample_consensus/ransac.h>
 #include <pcl/sample_consensus/sac_model_plane.h>
 #include <bnerf_msgs/FloorDetectionInfo.h>
+#include <bnerf_msgs/FloorDetection.h>
 
 
 namespace bnerf
 {
     FloorDetector::FloorDetector(ros::NodeHandle & nh)
-        : info_pub_(nh.advertise<bnerf_msgs::FloorDetectionInfo>("floor_detection_info", 16))
+        : info_pub_ (nh.advertise<bnerf_msgs::FloorDetectionInfo>("info", 16))
+        , floor_pub_(nh.advertise<bnerf_msgs::FloorDetection>("floor_detection", 16))
     {
         bool visualize;
         GET_OPTIONAL(nh, "visualize", visualize, false);

@@ -1,5 +1,5 @@
-time source_stamp
-time target_stamp
+time start_stamp
+time end_stamp
 
 geometry_msgs/Transform mean
 float64[36] covariance
