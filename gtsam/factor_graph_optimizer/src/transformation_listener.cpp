@@ -20,6 +20,7 @@
 #include <mutex>
 #include <chrono>
 #include <glog/logging.h>
+#include <gtsam/slam/PriorFactor.h> // unary factor
 
 std::mutex initial_mutex;
 gtsam::Values initial;
@@ -41,10 +42,37 @@ double calculateError(const geometry_msgs::Transform& t1, const geometry_msgs::V
     return sqrt(dx*dx + dy*dy + dz*dz);
 }
 
+// No duplicates
+int ensureKeyExists(const std::string& timestamp, gtsam::Values& values, const gtsam::Pose3& defaultPose) {
+    auto it = time_to_key_map.find(timestamp);
+    if (it == time_to_key_map.end()) {
+        int key = current_key++;
+        time_to_key_map[timestamp] = key;
+        values.insert(gtsam::Symbol('x', key), defaultPose);
+        return key;
+    } else {
+        return it->second;
+    }
+}
+
 void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr& msg) {
     gtsam::NonlinearFactorGraph localGraph;
     gtsam::Values localInitial;
+    auto poseNoiseModel = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1).finished());
 
+    // Process unary edges
+    for (const auto& unary_edge : msg->unary_edges) {
+        // coordinates of the position in 3D
+        double x = unary_edge.mean.x;
+        double y = unary_edge.mean.y;
+        double z = unary_edge.mean.z;
+        std::string timestamp = std::to_string(unary_edge.stamp.toSec());
+        
+        int key = ensureKeyExists(timestamp, localInitial, gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(x, y, z)));
+        localGraph.add(gtsam::PriorFactor<gtsam::Pose3>(gtsam::Symbol('x', key), gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(x, y, z)), poseNoiseModel));
+    }
+
+    // Process binary edges
     for (const auto& binary_edge : msg->binary_edges) {
         const bnerf_msgs::GraphUnaryEdge* closest_unary_edge = nullptr;
         double min_time_diff = std::numeric_limits<double>::infinity();
@@ -65,27 +93,13 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr& msg) {
             std::string binary_timestamp = std::to_string(binary_edge.target_stamp.toSec());
             std::string unary_timestamp = std::to_string(closest_unary_edge->stamp.toSec());
 
-            int key_t1, key_t2;
-            if (time_to_key_map.find(binary_timestamp) == time_to_key_map.end()) {
-                key_t1 = current_key++;
-                time_to_key_map[binary_timestamp] = key_t1;
-                localInitial.insert(gtsam::Symbol('x', key_t1), gtsam::Pose3());
-            } else {
-                key_t1 = time_to_key_map[binary_timestamp];
-            }
+            int key_t1 = ensureKeyExists(binary_timestamp, localInitial, gtsam::Pose3());
+            int key_t2 = ensureKeyExists(unary_timestamp, localInitial, gtsam::Pose3());
 
-            if (time_to_key_map.find(unary_timestamp) == time_to_key_map.end()) {
-                key_t2 = current_key++;
-                time_to_key_map[unary_timestamp] = key_t2;
-                localInitial.insert(gtsam::Symbol('x', key_t2), gtsam::Pose3());
-            } else {
-                key_t2 = time_to_key_map[unary_timestamp];
-            }
-
-            auto model = gtsam::noiseModel::Diagonal::Variances(gtsam::Vector6::Constant(0.1));
-            localGraph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1), gtsam::Symbol('x', key_t2), gtsam::Pose3(), model));
+            localGraph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1), gtsam::Symbol('x', key_t2), gtsam::Pose3(), poseNoiseModel));
         }
     }
+
     if (!localGraph.empty()) {
         std::lock_guard<std::mutex> lock(initial_mutex);
         graph.push_back(localGraph);
@@ -98,6 +112,7 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr& msg) {
         LOG(INFO) << "Average Error: " << averageError;
     }
 }
+
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "transformation_listener");
