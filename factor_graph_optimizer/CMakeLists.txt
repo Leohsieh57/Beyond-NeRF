@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
 
 find_package(GTSAM REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
-    bnerf_utils
+    transform_finder
 )
 
 include_directories(
@@ -41,7 +41,7 @@ catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
-    bnerf_utils
+    transform_finder
 )
 
 add_executable(${PROJECT_NAME}_node main.cpp)

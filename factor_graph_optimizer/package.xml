@@ -71,9 +71,9 @@
   <exec_depend>message_runtime</exec_depend>
 
 
-  <build_depend>bnerf_utils</build_depend>
-  <exec_depend>bnerf_utils</exec_depend>
-  <build_export_depend>bnerf_utils</build_export_depend>
+  <build_depend>transform_finder</build_depend>
+  <exec_depend>transform_finder</exec_depend>
+  <build_export_depend>transform_finder</build_export_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

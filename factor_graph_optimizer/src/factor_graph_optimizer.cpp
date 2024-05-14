@@ -14,6 +14,7 @@ namespace bnerf
 {
     FactorGraphOptimizer::FactorGraphOptimizer(ros::NodeHandle & nh)
         : stat_pub_(nh.advertise<bnerf_msgs::GraphIterationStatus>("graph_status", 10))
+        , tf_finder_(nh)
     {
         GET_REQUIRED(nh, "map_frame", map_frame_);
         GET_REQUIRED(nh, "lidar_frame", reg_frame_);
@@ -171,7 +172,7 @@ namespace bnerf
         gtsam::Values values;
         for (size_t key = 0; key < key_to_stamp.size(); key++)
         {
-            const SE3d pose(key_to_rot[key], key_to_vec[key]);
+            const SE3d pose = tf_finder_.InterpolateTransform(key_to_stamp[key]);
             gtsam::Pose3 estim(pose.matrix());
             gtsam::PriorFactor<gtsam::Pose3> factor(key, estim, noise);
             graph.add(factor);

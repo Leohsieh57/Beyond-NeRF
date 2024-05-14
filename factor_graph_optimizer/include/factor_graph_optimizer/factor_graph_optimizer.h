@@ -10,6 +10,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <sensor_msgs/Imu.h>
 #include <gtsam/nonlinear/Values.h>
+#include <transform_finder/transform_finder.h>
 
 namespace bnerf
 {
@@ -28,6 +29,7 @@ namespace bnerf
         static size_t GetKey(const ros::Time &, vector<ros::Time> &, map<ros::Time, size_t> &);
 
         ros::Publisher stat_pub_;
+        TransformFinder tf_finder_;
         tf2_ros::TransformBroadcaster caster_;
 
         ros::Duration win_span_;

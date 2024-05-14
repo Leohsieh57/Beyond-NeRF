@@ -1,23 +1,50 @@
 <launch>
-    <!-- <include file="$(find kitti2bag)/launch/replay.launch"/> -->
-    <include file="$(find scan_matcher)/launch/test_kitti.launch">
-        <arg name="visualize" value="true" />
-        <arg name="verbose" value="true" />
-    </include>
+    <include file="$(find kitti2bag)/launch/replay.launch"/>
 
-    <node pkg="navsat_bias" type="navsat_bias_node" name="navsat_bias_node" output="screen">
+    <node pkg="voxel_grid_filter" type="voxel_grid_filter_node" name="voxel_grid_filter_node" output="screen">
+        <param name="leaf_size" type="double" value="0.4" />
+        <param name="use_approx" type="bool" value="false" />
+        <remap from="~/raw_scan" to="/kitti/velo/pointcloud"/>
+    </node>
+
+    <arg name="fix_frame" default="gps_reference"/>
+    <node pkg="prior_factor_manager" type="prior_factor_manager_node" name="prior_factor_manager_node" output="screen">
         <param name="cov_x" type="double" value="1.0" />
         <param name="cov_y" type="double" value="1.0" />
         <param name="cov_z" type="double" value="100.0" />
-        <remap from="~/navsat_fix" to="/kitti/oxts/gps/fix"/>
+        <param name="fix_frame" value="$(arg fix_frame)" />
+        <remap from="~/gps" to="/kitti/oxts/gps/fix"/>
+        <remap from="~/imu" to="/kitti/oxts/imu"/>
+    </node>
+    
+    <arg name="solver" default="ndt"/>
+    <arg name="visualize" default="false"/>
+    <arg name="verbose" default="false"/>
+    <arg name="is_ndt" value="$(eval arg('solver') == 'ndt')"/>
+
+    <arg if="$(eval arg('solver') == 'ndt')" name="target_topic" value="/kitti/velo/pointcloud" />
+    <arg if="$(eval arg('solver') != 'ndt')" name="target_topic" value="/voxel_grid_filter_node/filtered_points" />
+
+    <node pkg="scan_matcher" type="scan_matcher_node" name="scan_matcher_node" output="screen">
+        <rosparam file="$(find scan_matcher)/cfg/$(arg solver).yaml" />
+        <param name="visualize" type="bool" value="$(arg visualize)" />
+        <param name="verbose" type="bool" value="$(arg verbose)" />
+        <param name="fix_frame" value="$(arg fix_frame)" />
+        <param name="dynamic_frame" value="velo_link" />
+        
+        <param name="solver" type="string" value="$(arg solver)" />
+        <remap from="~/target_scan" to="$(arg target_topic)"/>
+        <remap from="~/source_scan" to="/voxel_grid_filter_node/filtered_points"/>
     </node>
 
     <node pkg="factor_graph_optimizer" type="factor_graph_optimizer_node" 
         name="factor_graph_optimizer_node" output="log">
         <param name="window_span" type="double" value="3.0" />
         <param name="update_rate" type="double" value="20.0" />
+        <param name="fix_frame" type="string" value="$(arg fix_frame)" />
         <param name="map_frame" type="string" value="imu_link" />
         <param name="lidar_frame" type="string" value="velo_link" />
+        <param name="dynamic_frame" value="imu_link" />
 
         <remap from="~/binary_edge" to="/scan_matcher_node/registration_binary_edge"/>
         <remap from="~/unary_edge" to="/navsat_bias_node/gps_unary_edge"/>
