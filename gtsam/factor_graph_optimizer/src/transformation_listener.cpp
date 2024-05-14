@@ -27,6 +27,7 @@
 gtsam::Values initial;
 gtsam::NonlinearFactorGraph graph; // global graph
 std::unordered_map<std::string, int> time_to_key_map;
+std::unordered_map<int, ros::Time> key_to_stamp_map; 
 int current_key = 0;
 double totalError = 0.0;
 int count = 0;
@@ -44,8 +45,8 @@ double calculateError(const geometry_msgs::Transform &t1, const geometry_msgs::V
     return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-// No duplicates
-int ensureKeyExists(const std::string &timestamp, gtsam::Values &values, const gtsam::Pose3 &defaultPose)
+/// Ensures key exists and tracks the ROS timestamp for each key
+int ensureKeyExists(const std::string &timestamp, gtsam::Values &values, const gtsam::Pose3 &defaultPose, const ros::Time &ros_stamp)
 {
     auto it = time_to_key_map.find(timestamp);
     if (it == time_to_key_map.end())
@@ -53,6 +54,7 @@ int ensureKeyExists(const std::string &timestamp, gtsam::Values &values, const g
         int key = current_key++;
         time_to_key_map[timestamp] = key;
         values.insert(gtsam::Symbol('x', key), defaultPose);
+        key_to_stamp_map[key] = ros_stamp; // Store the ROS timestamp for this key
         return key;
     }
     else
@@ -66,6 +68,7 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
     std::string homeDir = getenv("HOME");
     static std::ofstream outFile(homeDir + "/catkin_ws/src/Beyond-NeRF/gtsam/factor_graph_optimizer/pose_data.csv", std::ios::app);
     time_to_key_map.clear();
+    key_to_stamp_map.clear();
     current_key = 0;
     gtsam::NonlinearFactorGraph localGraph;
     gtsam::Values localInitial;
@@ -84,9 +87,9 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
         double y = unary_edge.mean.y;
         double z = unary_edge.mean.z;
         std::string timestamp = std::to_string(unary_edge.stamp.toSec());
-
+        ros::Time ros_stamp = unary_edge.stamp;
         ROS_INFO("Generating new key for timestamp %s. Current key: %d", timestamp.c_str(), current_key);
-        int key = ensureKeyExists(timestamp, localInitial, gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(x, y, z)));
+        int key = ensureKeyExists(timestamp, localInitial, gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(x, y, z)), ros_stamp);
         ROS_INFO("Key for timestamp %s is %d", timestamp.c_str(), key);
 
         localGraph.add(gtsam::PriorFactor<gtsam::Pose3>(gtsam::Symbol('x', key), gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(x, y, z)), poseNoiseModel));
@@ -119,8 +122,11 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
             std::string binary_timestamp = std::to_string(binary_edge.start_stamp.toSec());
             std::string unary_timestamp = std::to_string(closest_unary_edge->stamp.toSec());
 
-            int key_t1 = ensureKeyExists(binary_timestamp, localInitial, gtsam::Pose3());
-            int key_t2 = ensureKeyExists(unary_timestamp, localInitial, gtsam::Pose3());
+            ros::Time binary_ros_stamp = binary_edge.start_stamp;
+            ros::Time unary_ros_stamp = closest_unary_edge->stamp;
+
+            int key_t1 = ensureKeyExists(binary_timestamp, localInitial, gtsam::Pose3(), binary_ros_stamp);
+            int key_t2 = ensureKeyExists(unary_timestamp, localInitial, gtsam::Pose3(), unary_ros_stamp);
 
             localGraph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1), gtsam::Symbol('x', key_t2), gtsam::Pose3(), poseNoiseModel));
         }
@@ -159,8 +165,8 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
             pose_msg.orientation.w = quat.w();
 
             ros::Time stamp(static_cast<double>(key.index()));
-            status_msg.graph_stamps.push_back(stamp);
             status_msg.graph_states.push_back(pose_msg);
+            status_msg.graph_stamps.push_back(key_to_stamp_map[key]); 
         }
 
         status_pub.publish(status_msg);
