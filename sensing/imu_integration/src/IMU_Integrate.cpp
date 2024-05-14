@@ -25,6 +25,8 @@
 
 // #include "bnerf_msgs/msg/imumsg.h"
 #include "bnerf_msgs/IntegrateIMU.h"
+#include <bnerf_utils/bnerf_utils.h>
+#include <geometry_msgs/PoseArray.h>
 
 using namespace std;
 using namespace gtsam;
@@ -35,10 +37,29 @@ using symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
 
 std::deque<sensor_msgs::Imu> globalImuDeque;
 std::mutex globalImuDequeMutex;
+std::unique_ptr<ros::Publisher> globalPosePub;
 
 Vector3 toVector3(const geometry_msgs::Vector3 &v)
 {
     return Vector3(v.x, v.y, v.z);
+}
+
+
+void publish_pose_array(const std::vector<bnerf_msgs::GraphBinaryEdge> &edges)
+{
+    geometry_msgs::PoseArray msg;
+    msg.header.frame_id = "imu_link";
+    msg.header.stamp = ros::Time::now();
+
+    bnerf::SE3d accum;
+    for (const auto & e: edges)
+    {
+        auto inc = bnerf::convert<bnerf::SE3d>(e.mean);
+        accum *= inc;
+        bnerf::convert(accum, msg.poses.emplace_back());
+    }
+
+    globalPosePub->publish(msg);
 }
 
 // store IMU msgs in time order
@@ -231,16 +252,30 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         res.edges.push_back(edge);
     }
 
+    if (globalPosePub)
+    {
+        publish_pose_array(res.edges);
+    }
+
     return true;
 }
+
 
 int main(int argc, char **argv)
 {
     FLAGS_colorlogtostderr = true;
     google::InstallFailureSignalHandler();
 
-    ros::init(argc, argv, "imu_listener_node");
-    ros::NodeHandle nh;
+    ros::init(argc, argv, "imu_integration_node");
+    ros::NodeHandle nh("~");
+
+    bool visualize;
+    GET_OPTIONAL(nh, "visualize", visualize, false);
+    if (visualize)
+    {
+        auto pub = nh.advertise<geometry_msgs::PoseArray>("imu_poses", 16);
+        globalPosePub.reset(new ros::Publisher(move(pub)));
+    }
 
     // TODO: Replace "/imu_topic" with the actual name of the topic
     ros::Subscriber sub = nh.subscribe("/kitti/oxts/imu", 1000, IMUCallback);

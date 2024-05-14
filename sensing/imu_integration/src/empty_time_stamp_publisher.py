@@ -9,10 +9,10 @@ from geometry_msgs.msg import Pose, PoseArray
 import numpy as np
 
 def request_empty_time_stamps():
-    rospy.wait_for_service('/integrate_imu')  # Wait for the service to be available
+    rospy.wait_for_service('/imu_integration_node/integrate_imu')  # Wait for the service to be available
     try:
         print("Sending request at:", rospy.Time.now())
-        integrate_imu = rospy.ServiceProxy('/integrate_imu', IntegrateIMU)
+        integrate_imu = rospy.ServiceProxy('/imu_integration_node/integrate_imu', IntegrateIMU)
         request = IntegrateIMURequest()
         # request.stamps = [rospy.Time.now()]  # Set the stamps field to a list containing the current time
         response = integrate_imu(request)

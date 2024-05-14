@@ -25,6 +25,7 @@ namespace bnerf
         
         ros::Publisher edge_pub_;
         ros::Timer timer_;
+        ros::ServiceClient cli_;
 
         ros::Duration win_span_;
         ros::Subscriber gps_sub_;
