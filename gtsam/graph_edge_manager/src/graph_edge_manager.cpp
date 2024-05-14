@@ -19,8 +19,8 @@ namespace bnerf
         GET_REQUIRED(nh, "window_span", win_span);
         win_span_.fromSec(win_span);
 
-        cli_ = nh.serviceClient<bnerf_msgs::IntegrateIMU>("integrate_imu");
-        LOG_ASSERT(cli_.waitForExistence(ros::Duration(5)));
+        // cli_ = nh.serviceClient<bnerf_msgs::IntegrateIMU>("integrate_imu");
+        // LOG_ASSERT(cli_.waitForExistence(ros::Duration(5)));
 
         tf2_ros::Buffer buf;
         tf2_ros::TransformListener lis(buf);

@@ -8,7 +8,7 @@
 namespace bnerf
 {
     GraphVisualizer::GraphVisualizer(ros::NodeHandle & nh)
-        : scan_pub_(nh.advertise<CloudXYZ>("combined_map", 128))
+        : scan_pub_(nh.advertise<CloudXYZI>("combined_map", 128))
     {
         stat_sub_ = nh.subscribe("graph_status", 16, &GraphVisualizer::GraphStatusCallBack, this);
         scan_sub_ = nh.subscribe("input_scan", 16, &GraphVisualizer::ScanCallBack, this);
@@ -42,16 +42,20 @@ namespace bnerf
         if (all_of(clouds.begin(), clouds.end(), [](auto s) {return !s; }))
             return;
 
-        CloudXYZ combined;
+        CloudXYZI combined;
         for (size_t i = 0; i < clouds.size(); i++)
         {
             if (!clouds[i])
                 continue;
 
             auto trans = convert<SE3d>(msg.graph_states[i]).inverse();
-            CloudXYZ submap;
+            CloudXYZI submap;
             pcl::fromROSMsg(*clouds[i], submap);
             pcl::transformPointCloud(submap, submap, trans.matrix().cast<float>());
+
+            for (auto & pt : submap)
+                pt.intensity = i;
+
             combined += submap;
         }
 
