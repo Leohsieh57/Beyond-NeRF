@@ -14,16 +14,20 @@ initializer(omp_priv=Mat66d::Zero())
 #pragma omp declare reduction(+:Vec6d: omp_out+=omp_in) \
 initializer(omp_priv=Vec6d::Zero())
 
-    Optimizer::Optimizer(Voxelizer::ConstPtr voxer, CloudXYZ::ConstPtr source)
+    Optimizer::Optimizer(Voxelizer::ConstPtr voxer, 
+        sensor_msgs::PointCloud2::ConstPtr msg)
         : voxer_(voxer)
-        , source_(source)
-        , voxels_(source->size())
+        , source_(nullptr)
+        , voxels_(msg->width)
         , threads_(voxer->GetNumThreads())
-        , chi2s_(source->size())
-        , trans_pts_(3, source->size())
-        , residuals_(source->size())
+        , chi2s_(msg->width)
+        , trans_pts_(3, msg->width)
+        , residuals_(msg->width)
     {
-
+        auto source = new CloudXYZ;
+        pcl::fromROSMsg(*msg, *source);
+        source_.reset(source);
+        src_stamp_ = msg->header.stamp;
     }
 
 
@@ -157,11 +161,8 @@ initializer(omp_priv=Vec6d::Zero())
     void Optimizer::GetGraphBinaryEdge(
         bnerf_msgs::GraphBinaryEdge & msg) const
     {
-        const auto target = voxer_->GetInputTarget();
-        const auto source = source_;
-
-        pcl_conversions::fromPCL(target->header.stamp, msg.start_stamp);
-        pcl_conversions::fromPCL(source->header.stamp, msg.end_stamp);
+        msg.start_stamp = voxer_->GetStamp();
+        msg.end_stamp = src_stamp_;
         convert(trans_, msg.mean);
 
         Eigen::SelfAdjointEigenSolver<Mat66d> solver;

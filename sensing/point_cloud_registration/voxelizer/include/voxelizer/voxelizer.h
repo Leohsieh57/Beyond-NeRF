@@ -12,9 +12,12 @@ namespace bnerf {
     class Voxelizer {
         public: 
         Voxelizer(ros::NodeHandle &);
-        bnerf_msgs::VoxelizationInfo SetInputTarget(CloudXYZ::ConstPtr);
+        bnerf_msgs::VoxelizationInfo SetInputTarget(sensor_msgs::PointCloud2::ConstPtr);
         CloudXYZ::ConstPtr GetInputTarget() const;
-        ros::Time GetStamp() const;
+        const ros::Time & GetStamp() const;
+
+        private:
+        sensor_msgs::PointCloud2::ConstPtr msg_;
         
         public:
         const int & GetNumThreads() const;

@@ -21,7 +21,8 @@
         <remap from="~/unary_edge" to="/navsat_bias_node/gps_unary_edge"/>
     </node>
 
-    <node pkg="factor_graph_optimizer" type="factor_graph_optimizer_node" name="factor_graph_optimizer_node" output="log">
+    <node pkg="factor_graph_optimizer" type="factor_graph_optimizer_node" 
+        name="factor_graph_optimizer_node" output="log">
     </node>
 
     <node pkg="graph_visualizer" type="graph_visualizer_node" name="graph_visualizer_node" output="screen">

@@ -12,12 +12,13 @@ namespace bnerf
 {
     struct Optimizer
     {
-        Optimizer(Voxelizer::ConstPtr, CloudXYZ::ConstPtr);
+        Optimizer(Voxelizer::ConstPtr, sensor_msgs::PointCloud2::ConstPtr);
         void GetScanMatchingInfo(bnerf_msgs::ScanMatchingInfo &) const;
         void GetCombinedScan(CloudXYZI &) const;
         void GetGraphBinaryEdge(bnerf_msgs::GraphBinaryEdge &) const;
 
         SE3d trans_;
+        ros::Time src_stamp_;
         Voxelizer::ConstPtr voxer_;
         CloudXYZ::ConstPtr source_;
         vector<vector<Voxel::ConstPtr>> voxels_;

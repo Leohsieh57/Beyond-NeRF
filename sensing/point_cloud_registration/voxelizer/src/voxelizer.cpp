@@ -13,9 +13,14 @@ namespace bnerf
     }
 
 
-    bnerf_msgs::VoxelizationInfo Voxelizer::SetInputTarget(CloudXYZ::ConstPtr target)
+    bnerf_msgs::VoxelizationInfo Voxelizer::SetInputTarget(
+        sensor_msgs::PointCloud2::ConstPtr scan_msg)
     {
+        msg_ = scan_msg;
         const auto t1 = ros::Time::now();
+
+        CloudXYZ::Ptr target(new CloudXYZ);
+        pcl::fromROSMsg(*msg_, *target);
 
         LOG_ASSERT(target_ = target);
         const auto vol = ComputeVolume();
@@ -101,7 +106,7 @@ namespace bnerf
         const auto t2 = ros::Time::now();
 
         bnerf_msgs::VoxelizationInfo msg;
-        pcl_conversions::fromPCL(target->header, msg.header);
+        msg.header = msg_->header;
         msg.exec_time = t2 - t1;
         msg.num_threads = threads_;
         msg.num_valid_voxels = num_valids;
@@ -148,10 +153,8 @@ namespace bnerf
     }
     
 
-    ros::Time Voxelizer::GetStamp() const
+    const ros::Time & Voxelizer::GetStamp() const
     {
-        ros::Time stamp;
-        pcl_conversions::fromPCL(target_->header.stamp, stamp);
-        return stamp;
+        return msg_->header.stamp;
     }
 }

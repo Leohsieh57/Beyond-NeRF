@@ -43,7 +43,7 @@ namespace bnerf
     }
 
 
-    void ScanMatcher::SourceScanCallBack(const CloudXYZ::ConstPtr & source)
+    void ScanMatcher::SourceScanCallBack(const sensor_msgs::PointCloud2::ConstPtr & source)
     {
         const auto t1 = ros::Time::now();
         const auto voxer = GetVoxelizer(source);
@@ -51,7 +51,7 @@ namespace bnerf
             return;
 
         if (verbose_)
-            LOG(WARNING) << "start optim. scan size: " << source->size();
+            LOG(WARNING) << "start optim. scan size: " << source->width;
 
         SE3d init_guess;
         Optimizer optim(voxer, source);
@@ -96,11 +96,10 @@ namespace bnerf
     }
 
 
-    Voxelizer::ConstPtr ScanMatcher::GetVoxelizer(CloudXYZ::ConstPtr source)
+    Voxelizer::ConstPtr ScanMatcher::GetVoxelizer(
+        sensor_msgs::PointCloud2::ConstPtr source)
     {
-        ros::Time t2;
-        pcl_conversions::fromPCL(source->header.stamp, t2);
-
+        const auto & t2 = source->header.stamp;
         Voxelizer::ConstPtr best_voxer;
         double best_secs = numeric_limits<double>::max();
 
@@ -123,7 +122,8 @@ namespace bnerf
     }
 
 
-    void ScanMatcher::TargetScanCallBack(const CloudXYZ::ConstPtr & target)
+    void ScanMatcher::TargetScanCallBack(
+        const sensor_msgs::PointCloud2::ConstPtr & target)
     {
         LOG_ASSERT(target);
 

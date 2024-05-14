@@ -12,11 +12,11 @@ namespace bnerf
     {
         public: 
         ScanMatcher();
-        void SourceScanCallBack(const CloudXYZ::ConstPtr &);
-        void TargetScanCallBack(const CloudXYZ::ConstPtr &);
+        void SourceScanCallBack(const sensor_msgs::PointCloud2::ConstPtr &);
+        void TargetScanCallBack(const sensor_msgs::PointCloud2::ConstPtr &);
 
         private:
-        Voxelizer::ConstPtr GetVoxelizer(CloudXYZ::ConstPtr);
+        Voxelizer::ConstPtr GetVoxelizer(sensor_msgs::PointCloud2::ConstPtr);
 
         //registrator stuffs
         private:
