@@ -37,9 +37,10 @@ ros::Subscriber sub;
 // Time variable for managing publication rate
 ros::Time last_pub_time;
 
-void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr & msg) {
+void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
+{
     LOG(INFO) << "received " << msg->binary_edges.size()
-        << " binary edges and " << msg->unary_edges.size() << " unary edges";
+              << " binary edges and " << msg->unary_edges.size() << " unary edges";
     // std::string t1 = std::to_string(msg->header1.stamp.toSec());
     // std::string t2 = std::to_string(msg->header2.stamp.toSec());
 
@@ -73,48 +74,52 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr & msg) {
     // updatesSinceLastOptimization++;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     ros::init(argc, argv, "transformation_listener");
     ros::NodeHandle nh;
-    
+
     // subscribers and publishers
     sub = nh.subscribe("/graph_edge_manager_node/graph_edge_collection", 1000, EdgeCallBack);
-    //pose_pub = nh.advertise<geometry_msgs::PoseStamped>("optimized_poses", 10);
+    // pose_pub = nh.advertise<geometry_msgs::PoseStamped>("optimized_poses", 10);
     status_pub = nh.advertise<bnerf_msgs::GraphIterationStatus>("graph_status", 10);
 
-
     ros::Rate rate(10.0);
-    while (ros::ok()) {
-    	ros::spinOnce();
-    	ROS_ERROR("Updates since last optimization: %d", updatesSinceLastOptimization);
-    	start_time = std::chrono::high_resolution_clock::now(); // capture present time
-	if (updatesSinceLastOptimization >= 5) {
-	
-	//if (ros::Time::now() - last_pub_time > ros::Duration(1.0)) { //placeholder condition to test
-	    bnerf_msgs::GraphIterationStatus status_msg; // to be changed
-	    ROS_ERROR("Condition met, running optimizer...");
-	    
-	    gtsam::LevenbergMarquardtParams params;
-	    params.setVerbosityLM("SUMMARY");
-	    //status_msg.iteration = iteration_count++; // we want to increment to publish
-	    
-	    status_msg.graph_stamps.reserve(100);  // reserve space if expecting many iterations (was getting an error)
-	    status_msg.graph_states.reserve(100);
+    while (ros::ok())
+    {
+        ros::spinOnce();
+        ROS_ERROR("Updates since last optimization: %d", updatesSinceLastOptimization);
+        start_time = std::chrono::high_resolution_clock::now(); // capture present time
+        if (updatesSinceLastOptimization >= 5)
+        {
 
-	    try {
+            // if (ros::Time::now() - last_pub_time > ros::Duration(1.0)) { //placeholder condition to test
+            bnerf_msgs::GraphIterationStatus status_msg; // to be changed
+            ROS_ERROR("Condition met, running optimizer...");
+
+            gtsam::LevenbergMarquardtParams params;
+            params.setVerbosityLM("SUMMARY");
+            // status_msg.iteration = iteration_count++; // we want to increment to publish
+
+            status_msg.graph_stamps.reserve(100); // reserve space if expecting many iterations (was getting an error)
+            status_msg.graph_states.reserve(100);
+
+            try
+            {
                 auto start_time = std::chrono::high_resolution_clock::now(); // start time capture
 
                 gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial, params);
                 gtsam::Values result = optimizer.optimize();
 
-                auto end_time = std::chrono::high_resolution_clock::now();  // end time capture
+                auto end_time = std::chrono::high_resolution_clock::now(); // end time capture
                 auto exec_time = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
                 status_msg.exec_time = ros::Duration(exec_time.count() / 1000000.0); // convert to seconds
                 status_msg.iteration = iteration_count++;
 
                 // Populate graph states
-                for (const auto& key_value : initial) {
+                for (const auto &key_value : initial)
+                {
                     gtsam::Symbol key(key_value.key);
                     gtsam::Pose3 pose = initial.at<gtsam::Pose3>(key);
 
@@ -134,11 +139,12 @@ int main(int argc, char **argv) {
                 ROS_ERROR("Optimizer has run. Final results below:");
                 result.print("Final results\n");
 
-                initial = result; // Uudate initial estimates with optimized values
+                initial = result;                 // Uudate initial estimates with optimized values
                 last_pub_time = ros::Time::now(); // update last publication time
                 updatesSinceLastOptimization = 0;
-
-            } catch (const std::exception& e) {
+            }
+            catch (const std::exception &e)
+            {
                 ROS_ERROR("Exception during optimization: %s", e.what());
             }
         }
@@ -147,4 +153,3 @@ int main(int argc, char **argv) {
     }
     return 0;
 }
-
