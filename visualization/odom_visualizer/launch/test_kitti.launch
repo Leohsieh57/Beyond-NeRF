@@ -1,20 +1,19 @@
 <launch>
-    <include file="$(find kitti2bag)/launch/replay.launch"/>
-    <node pkg="voxel_grid_filter" type="voxel_grid_filter_node" name="velodyne_filter_node" output="screen">
-        <param name="leaf_size" type="double" value="0.5" />
-        <param name="use_approx" type="bool" value="false" />
-        <remap from="~/raw_scan" to="/kitti/velo/pointcloud"/>
+    <include file="$(find scan_matcher)/launch/test_kitti.launch">
+        <arg name="visualize" value="false" />
+    </include>
+
+
+    <arg name="frame_id" default="velo_link" />
+    <node pkg="odom_visualizer" type="edge2odom.py" name="edge2odom_node" output="screen">
+        <param name="frame_id" type="string" value="$(arg frame_id)" />
+        <param name="edge_topic" type="string" value="/scan_matcher_node/registration_binary_edge" />
+        <param name="odom_topic" type="string" value="/odom_visualizer_node/input_odom" />
     </node>
 
-    <node pkg="graph_visualizer" type="main.py" name="status_generator_node" output="screen">
-        <remap from="~/input_scan" to="/velodyne_filter_node/filtered_points"/>
+    <node pkg="odom_visualizer" type="odom_visualizer_node" name="odom_visualizer_node" output="screen">
+        <param name="frame_id" type="string" value="$(arg frame_id)" />
     </node>
 
-    <node pkg="graph_visualizer" type="graph_visualizer_node" name="graph_visualizer_node" output="screen">
-        <remap from="~/input_scan" to="/velodyne_filter_node/filtered_points"/>
-        <remap from="~/graph_status" to="/status_generator_node/graph_status"/>
-    </node>
-
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find graph_visualizer)/rviz/test_kitti.rviz" />
-
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find odom_visualizer)/rviz/test_kitti.rviz" />
 </launch>

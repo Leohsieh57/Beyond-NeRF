@@ -4,7 +4,7 @@
 
 #include <ros/ros.h>
 #include <bnerf_utils/typedef.h>
-#include <geometry_msgs/Transform.h>
+#include <geometry_msgs/TransformStamped.h>
 
 
 namespace bnerf
@@ -16,13 +16,17 @@ namespace bnerf
         
         private:
         void OdomCallBack(const geometry_msgs::TransformStamped &);
+        void PublishOdometry(const ros::TimerEvent &);
+        vector<SE3d> GetOdometries();
 
         ros::Subscriber odom_sub_;
         ros::Publisher pose_pub_;
+        ros::Timer timer_;
 
-        mutex pose_mutex_;
-        map<ros::Time, SE3d> poses_;
+        mutex odom_mutex_;
+        string frame_id_;
+        map<ros::Time, SE3d> odoms_;
     };
 }
 
-#endif // __BNERF_GRAPH_VISUALIZER_H__
+#endif // __BNERF_ODOM_VISUALIZER_H__
