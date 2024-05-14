@@ -23,9 +23,12 @@ namespace bnerf
         ros::Subscriber stat_sub_;
         ros::Subscriber scan_sub_;
         ros::Publisher scan_pub_;
+        ros::Publisher pose_pub_;
+        ros::Publisher path_pub_;
 
         mutex scan_mutex_;
         map<ros::Time, sensor_msgs::PointCloud2::ConstPtr> scan_msgs_;
+        SE3d velo_to_imu_;
     };
 }
 

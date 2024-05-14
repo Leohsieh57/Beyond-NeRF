@@ -25,7 +25,7 @@ class GraphStatusGenerator:
     def scan_call_back(self, msg: PointCloud2):
         t = msg.header.stamp
         trans: TransformStamped
-        trans = self.tf_buf.lookup_transform('velo_link', 'world', t, rospy.Duration(5))
+        trans = self.tf_buf.lookup_transform('world', 'imu_link', t, rospy.Duration(5))
 
         pose = Pose()
         pose.orientation = trans.transform.rotation
@@ -36,7 +36,7 @@ class GraphStatusGenerator:
         self.msg.graph_states.append(pose)
 
         self.stat_pub.publish(self.msg)
-        while len(self.msg.graph_stamps) > 200:
+        while len(self.msg.graph_stamps) > 100:
             self.msg.graph_stamps.pop(0)
             self.msg.graph_states.pop(0)
 

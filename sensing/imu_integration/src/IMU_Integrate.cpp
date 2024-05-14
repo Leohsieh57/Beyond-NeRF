@@ -37,29 +37,11 @@ using symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
 
 std::deque<sensor_msgs::Imu> globalImuDeque;
 std::mutex globalImuDequeMutex;
-std::unique_ptr<ros::Publisher> globalPosePub;
+std::unique_ptr<ros::Publisher> globalEdgePub;
 
 Vector3 toVector3(const geometry_msgs::Vector3 &v)
 {
     return Vector3(v.x, v.y, v.z);
-}
-
-
-void publish_pose_array(const std::vector<bnerf_msgs::GraphBinaryEdge> &edges)
-{
-    geometry_msgs::PoseArray msg;
-    msg.header.frame_id = "imu_link";
-    msg.header.stamp = ros::Time::now();
-
-    bnerf::SE3d accum;
-    for (const auto & e: edges)
-    {
-        auto inc = bnerf::convert<bnerf::SE3d>(e.mean);
-        accum *= inc;
-        bnerf::convert(accum, msg.poses.emplace_back());
-    }
-
-    globalPosePub->publish(msg);
 }
 
 // store IMU msgs in time order
@@ -95,7 +77,7 @@ geometry_msgs::Transform integrate_subarray(std::vector<sensor_msgs::Imu> imu_ms
     // lock IMU array so it can't be changed until the function is done
 
     auto current_bias = imuBias::ConstantBias(); // init with zero bias
-    double g = 9.8;
+    double g = 9.81;
     auto w_coriolis = Vector3::Zero(); // zero vector
 
     // TODO: placeholder values, change later
@@ -250,11 +232,8 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
             edge.type = bnerf_msgs::GraphBinaryEdge::INVALID;
         }
         res.edges.push_back(edge);
-    }
-
-    if (globalPosePub)
-    {
-        publish_pose_array(res.edges);
+        if (globalEdgePub)
+            globalEdgePub->publish(edge);
     }
 
     return true;
@@ -273,8 +252,8 @@ int main(int argc, char **argv)
     GET_OPTIONAL(nh, "visualize", visualize, false);
     if (visualize)
     {
-        auto pub = nh.advertise<geometry_msgs::PoseArray>("imu_poses", 16);
-        globalPosePub.reset(new ros::Publisher(move(pub)));
+        auto pub = nh.advertise<bnerf_msgs::GraphBinaryEdge>("imu_edge", 16);
+        globalEdgePub.reset(new ros::Publisher(move(pub)));
     }
 
     // TODO: Replace "/imu_topic" with the actual name of the topic

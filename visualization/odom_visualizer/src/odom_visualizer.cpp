@@ -5,11 +5,13 @@
 #include <bnerf_utils/bnerf_utils.h>
 #include <pcl/common/transforms.h>
 #include <nav_msgs/Path.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace bnerf
 {
     OdomVisualizer::OdomVisualizer(ros::NodeHandle &nh)
-        : pose_pub_(nh.advertise<geometry_msgs::PoseArray>("odometry", 128)), path_pub_(nh.advertise<nav_msgs::Path>("trajectory", 128))
+        : pose_pub_(nh.advertise<geometry_msgs::PoseArray>("odometry", 128))
+        , path_pub_(nh.advertise<nav_msgs::Path>("trajectory", 128))
     {
         GET_REQUIRED(nh, "frame_id", frame_id_);
         odom_sub_ = nh.subscribe("input_odom", 16, &OdomVisualizer::OdomCallBack, this);

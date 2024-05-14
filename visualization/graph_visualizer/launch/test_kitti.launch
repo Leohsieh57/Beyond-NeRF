@@ -15,6 +15,11 @@
         <remap from="~/graph_status" to="/status_generator_node/graph_status"/>
     </node>
 
+    <node pkg="voxel_grid_filter" type="voxel_grid_filter_node" name="combined_filter_node" output="screen">
+        <param name="leaf_size" type="double" value="0.5" />
+        <remap from="~/raw_scan" to="/graph_visualizer_node/combined_map"/>
+    </node>
+
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find graph_visualizer)/rviz/test_kitti.rviz" />
 
 </launch>

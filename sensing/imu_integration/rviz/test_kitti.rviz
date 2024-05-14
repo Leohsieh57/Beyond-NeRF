@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /PoseArray1
         - /PoseArray1/Status1
       Splitter Ratio: 0.5021008253097534
     Tree Height: 1118
@@ -67,7 +66,7 @@ Visualization Manager:
       Shaft Length: 0.23000000417232513
       Shaft Radius: 0.009999999776482582
       Shape: Arrow (Flat)
-      Topic: /imu_integration_node/imu_poses
+      Topic: /odom_visualizer_node/odometry
       Unreliable: false
       Value: true
   Enabled: true
@@ -98,7 +97,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 368.83416748046875
+      Distance: 186.99583435058594
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -106,17 +105,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -38.09792709350586
-        Y: -24.124374389648438
-        Z: 79.31915283203125
+        X: -21.720027923583984
+        Y: -23.81898307800293
+        Z: 50.3435173034668
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.200398787856102
+      Pitch: 0.06039881333708763
       Target Frame: <Fixed Frame>
-      Yaw: 1.7622675895690918
+      Yaw: 1.4822678565979004
     Saved: ~
 Window Geometry:
   Displays:

@@ -4,12 +4,22 @@
 #include <glog/logging.h>
 #include <bnerf_utils/bnerf_utils.h>
 #include <pcl/common/transforms.h>
+#include <geometry_msgs/PoseArray.h>
+#include <nav_msgs/Path.h>
 
 namespace bnerf
 {
     GraphVisualizer::GraphVisualizer(ros::NodeHandle & nh)
         : scan_pub_(nh.advertise<CloudXYZI>("combined_map", 128))
+        , pose_pub_(nh.advertise<geometry_msgs::PoseArray>("odometry", 128))
+        , path_pub_(nh.advertise<nav_msgs::Path>("trajectory", 128))
     {
+        tf2_ros::Buffer buf;
+        tf2_ros::TransformListener lis(buf);
+        
+        auto msg = buf.lookupTransform("imu_link", "velo_link", ros::Time(0), ros::Duration(20));
+        velo_to_imu_ = convert<SE3d>(msg.transform).inverse();
+
         stat_sub_ = nh.subscribe("graph_status", 16, &GraphVisualizer::GraphStatusCallBack, this);
         scan_sub_ = nh.subscribe("input_scan", 16, &GraphVisualizer::ScanCallBack, this);
     }
@@ -20,6 +30,27 @@ namespace bnerf
     {
         LOG_ASSERT(!msg.graph_stamps.empty());
         LOG_ASSERT(msg.graph_stamps.size() == msg.graph_states.size());
+
+
+        nav_msgs::Path traj_msg;
+        traj_msg.header.frame_id = "map";
+        traj_msg.header.stamp = ros::Time::now();
+
+        geometry_msgs::PoseArray odom_msg;
+        odom_msg.header = traj_msg.header;
+
+        for (const auto &state : msg.graph_states)
+        {
+            auto &msg = traj_msg.poses.emplace_back();
+            msg.header = traj_msg.header;
+
+            convert(convert<SE3d>(state), msg.pose);
+            odom_msg.poses.push_back(msg.pose);
+            traj_msg.poses.emplace_back();
+        }
+
+        pose_pub_.publish(odom_msg);
+        path_pub_.publish(traj_msg);
 
         auto min_stamp = *min_element(msg.graph_stamps.begin(), msg.graph_stamps.end());
 
@@ -48,7 +79,8 @@ namespace bnerf
             if (!clouds[i])
                 continue;
 
-            auto trans = convert<SE3d>(msg.graph_states[i]).inverse();
+            auto trans = convert<SE3d>(msg.graph_states[i]);
+            trans = trans * velo_to_imu_;
             CloudXYZI submap;
             pcl::fromROSMsg(*clouds[i], submap);
             pcl::transformPointCloud(submap, submap, trans.matrix().cast<float>());
@@ -62,7 +94,7 @@ namespace bnerf
         if (combined.empty())
             return;
 
-        combined.header.frame_id = "world";
+        combined.header.frame_id = "map";
         combined.header.stamp = pcl_conversions::toPCL(ros::Time::now());
         scan_pub_.publish(combined);
     }

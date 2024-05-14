@@ -30,5 +30,17 @@
         <remap from="~/graph_status" to="/graph_status"/>
     </node>
 
+    <!-- <arg name="frame_id" default="velo_link" />
+    <node pkg="odom_visualizer" type="edge2odom.py" name="edge2odom_node" output="screen">
+        <param name="frame_id" type="string" value="$(arg frame_id)" />
+        <param name="edge_topic" type="string" value="/scan_matcher_node/registration_binary_edge" />
+        <param name="odom_topic" type="string" value="/odom_visualizer_node/input_odom" />
+    </node>
+
+    <node pkg="odom_visualizer" type="odom_visualizer_node" name="odom_visualizer_node" output="screen">
+        <param name="frame_id" type="string" value="$(arg frame_id)" />
+        <remap from="~/input_odom" to="/graph_status"/>
+    </node> -->
+
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find factor_graph_optimizer)/rviz/kitti.rviz" />
 </launch>
