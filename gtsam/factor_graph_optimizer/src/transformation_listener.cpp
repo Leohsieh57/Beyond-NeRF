@@ -1,155 +1,189 @@
-#include "ros/ros.h"
+#include <ros/ros.h>
 #include <bnerf_msgs/GraphBinaryEdge.h>
 #include <bnerf_msgs/GraphEdgeCollection.h>
-#include <bnerf_msgs/GraphIterationStatus.h> // edit as needed, the location needs to be changed
-#include "gtsam/geometry/Pose3.h"
-#include "gtsam/nonlinear/NonlinearFactorGraph.h"
-#include "gtsam/nonlinear/LevenbergMarquardtOptimizer.h"
-#include "gtsam/nonlinear/Values.h"
-#include "gtsam/inference/Symbol.h"
-#include "gtsam/slam/BetweenFactor.h"
+#include <bnerf_msgs/GraphUnaryEdge.h>
+#include <bnerf_msgs/GraphIterationStatus.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <gtsam/geometry/Pose3.h>
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
+#include <gtsam/nonlinear/Values.h>
+#include <gtsam/inference/Symbol.h>
+#include <gtsam/slam/BetweenFactor.h>
+#include <gtsam/nonlinear/LevenbergMarquardtParams.h>
 #include <unordered_map>
 #include <string>
-#include <glog/logging.h>
-#include <gtsam/nonlinear/LevenbergMarquardtParams.h>
-
-// visualization stuff
-#include "ros/ros.h"
-#include "geometry_msgs/PoseStamped.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include <cmath>
+#include <limits>
+#include <map>
+#include <mutex>
 #include <chrono>
+#include <glog/logging.h>
+#include <gtsam/slam/PriorFactor.h> // unary factor
+#include <cstdlib>
+#include <fstream>
 
-// listen for now you are gonna ignore my ugly code and lack of modularity. i'll refactor later <3 (i mixed tabs and spaces ok)
-// timing variables
-std::chrono::high_resolution_clock::time_point start_time, end_time;
-
-gtsam::NonlinearFactorGraph graph;
 gtsam::Values initial;
+gtsam::NonlinearFactorGraph graph; // global graph
 std::unordered_map<std::string, int> time_to_key_map;
 int current_key = 0;
+double totalError = 0.0;
+int count = 0;
 static int updatesSinceLastOptimization = 0;
 static int iteration_count = 0;
 
-// Publishers
-ros::Publisher pose_pub;
 ros::Publisher status_pub;
-ros::Subscriber sub;
-// Time variable for managing publication rate
 ros::Time last_pub_time;
+
+double calculateError(const geometry_msgs::Transform &t1, const geometry_msgs::Vector3 &t2)
+{
+    double dx = t1.translation.x - t2.x;
+    double dy = t1.translation.y - t2.y;
+    double dz = t1.translation.z - t2.z;
+    return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+// No duplicates
+int ensureKeyExists(const std::string &timestamp, gtsam::Values &values, const gtsam::Pose3 &defaultPose)
+{
+    auto it = time_to_key_map.find(timestamp);
+    if (it == time_to_key_map.end())
+    {
+        int key = current_key++;
+        time_to_key_map[timestamp] = key;
+        values.insert(gtsam::Symbol('x', key), defaultPose);
+        return key;
+    }
+    else
+    {
+        return it->second;
+    }
+}
 
 void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
 {
-    LOG(INFO) << "received " << msg->binary_edges.size()
-              << " binary edges and " << msg->unary_edges.size() << " unary edges";
-    // std::string t1 = std::to_string(msg->header1.stamp.toSec());
-    // std::string t2 = std::to_string(msg->header2.stamp.toSec());
+    std::string homeDir = getenv("HOME");
+    static std::ofstream outFile(homeDir + "/catkin_ws/src/Beyond-NeRF/gtsam/factor_graph_optimizer/pose_data.csv", std::ios::app);
+    time_to_key_map.clear();
+    current_key = 0;
+    gtsam::NonlinearFactorGraph localGraph;
+    gtsam::Values localInitial;
+    auto poseNoiseModel = gtsam::noiseModel::Diagonal::Variances((gtsam::Vector(6) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1).finished());
 
-    // // Convert ROS transform to GTSAM Pose3
-    // const auto &q = msg->transform.rotation;
-    // const auto &t = msg->transform.translation;
-    // gtsam::Pose3 pose(gtsam::Rot3::Quaternion(q.w, q.x, q.y, q.z),
-    //                   gtsam::Point3(t.x, t.y, t.z));
+    if (!outFile.is_open())
+    {
+        outFile.open(homeDir + "/catkin_ws/src/Beyond-NeRF/gtsam/factor_graph_optimizer/pose_data.csv", std::ios::app);
+    }
 
-    // int key_t1, key_t2;
-    // // Check if t1 and t2 have corresponding keys, if not -- add them
-    // if (time_to_key_map.find(t1) == time_to_key_map.end()) {
-    //     key_t1 = current_key++;
-    //     time_to_key_map[t1] = key_t1;
-    //     initial.insert(gtsam::Symbol('x', key_t1), gtsam::Pose3());  // Default initialize
-    // } else {
-    //     key_t1 = time_to_key_map[t1];
-    // }
+    // Process unary edges
+    for (const auto &unary_edge : msg->unary_edges)
+    {
+        // coordinates of the position in 3D
+        double x = unary_edge.mean.x;
+        double y = unary_edge.mean.y;
+        double z = unary_edge.mean.z;
+        std::string timestamp = std::to_string(unary_edge.stamp.toSec());
 
-    // if (time_to_key_map.find(t2) == time_to_key_map.end()) {
-    //     key_t2 = current_key++;
-    //     time_to_key_map[t2] = key_t2;
-    //     initial.insert(gtsam::Symbol('x', key_t2), pose);
-    // } else {
-    //     key_t2 = time_to_key_map[t2];
-    // }
+        ROS_INFO("Generating new key for timestamp %s. Current key: %d", timestamp.c_str(), current_key);
+        int key = ensureKeyExists(timestamp, localInitial, gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(x, y, z)));
+        ROS_INFO("Key for timestamp %s is %d", timestamp.c_str(), key);
 
-    // // Create a between factor between t1 and t2
-    // auto model = gtsam::noiseModel::Diagonal::Variances(gtsam::Vector6::Constant(0.1));
-    // graph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1), gtsam::Symbol('x', key_t2), pose, model));
-    // updatesSinceLastOptimization++;
+        localGraph.add(gtsam::PriorFactor<gtsam::Pose3>(gtsam::Symbol('x', key), gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(x, y, z)), poseNoiseModel));
+
+        outFile << x << "," << y << "," << z << "\n";
+    }
+
+    // Process binary edges
+    for (const auto &binary_edge : msg->binary_edges)
+    {
+        const bnerf_msgs::GraphUnaryEdge *closest_unary_edge = nullptr;
+        double min_time_diff = std::numeric_limits<double>::infinity();
+
+        for (const auto &unary_edge : msg->unary_edges)
+        {
+            double time_diff = std::abs(binary_edge.target_stamp.toSec() - unary_edge.stamp.toSec());
+            if (time_diff < min_time_diff)
+            {
+                min_time_diff = time_diff;
+                closest_unary_edge = &unary_edge;
+            }
+        }
+
+        if (closest_unary_edge)
+        {
+            double error = calculateError(binary_edge.mean, closest_unary_edge->mean);
+            totalError += error;
+            count++;
+
+            std::string binary_timestamp = std::to_string(binary_edge.target_stamp.toSec());
+            std::string unary_timestamp = std::to_string(closest_unary_edge->stamp.toSec());
+
+            int key_t1 = ensureKeyExists(binary_timestamp, localInitial, gtsam::Pose3());
+            int key_t2 = ensureKeyExists(unary_timestamp, localInitial, gtsam::Pose3());
+
+            localGraph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1), gtsam::Symbol('x', key_t2), gtsam::Pose3(), poseNoiseModel));
+        }
+    }
+
+    if (!localGraph.empty())
+    {
+        gtsam::LevenbergMarquardtParams params;
+        params.setVerbosityLM("SUMMARY");
+        std::string homeDir = getenv("HOME");
+        params.setLogFile(homeDir + "/catkin_ws/src/Beyond-NeRF/gtsam/factor_graph_optimizer/optimizer_log.txt");
+
+        gtsam::LevenbergMarquardtOptimizer optimizer(localGraph, localInitial, params);
+        gtsam::Values result = optimizer.optimize();
+
+        // Publish the results
+        bnerf_msgs::GraphIterationStatus status_msg;
+        status_msg.graph_stamps.reserve(100);
+        status_msg.graph_states.reserve(100);
+
+        // Populate graph states for publishing
+        for (const auto &key_value : result)
+        {
+            gtsam::Symbol key(key_value.key);
+            gtsam::Pose3 pose = result.at<gtsam::Pose3>(key);
+
+            geometry_msgs::Pose pose_msg;
+            pose_msg.position.x = pose.x();
+            pose_msg.position.y = pose.y();
+            pose_msg.position.z = pose.z();
+            auto quat = pose.rotation().toQuaternion();
+            pose_msg.orientation.x = quat.x();
+            pose_msg.orientation.y = quat.y();
+            pose_msg.orientation.z = quat.z();
+            pose_msg.orientation.w = quat.w();
+            status_msg.graph_states.push_back(pose_msg);
+        }
+
+        status_pub.publish(status_msg);
+        ROS_INFO("Optimizer has run. Final results published.");
+    }
+
+    if (count > 0)
+    {
+        double averageError = totalError / count;
+        ROS_INFO("Average Error: %f", averageError);
+    }
 }
 
 int main(int argc, char **argv)
 {
+    // Initialize the ROS node
     ros::init(argc, argv, "transformation_listener");
     ros::NodeHandle nh;
 
-    // subscribers and publishers
-    sub = nh.subscribe("/graph_edge_manager_node/graph_edge_collection", 1000, EdgeCallBack);
-    // pose_pub = nh.advertise<geometry_msgs::PoseStamped>("optimized_poses", 10);
+    // Initialize subscriber to the graph edge collection topic
+    ros::Subscriber sub = nh.subscribe("/graph_edge_manager_node/graph_edge_collection", 1000, EdgeCallBack);
+
+    // Initialize publisher for the graph iteration status
     status_pub = nh.advertise<bnerf_msgs::GraphIterationStatus>("graph_status", 10);
 
-    ros::Rate rate(10.0);
-    while (ros::ok())
-    {
-        ros::spinOnce();
-        ROS_ERROR("Updates since last optimization: %d", updatesSinceLastOptimization);
-        start_time = std::chrono::high_resolution_clock::now(); // capture present time
-        if (updatesSinceLastOptimization >= 5)
-        {
+    // Spin to continuously process incoming messages
+    ros::spin();
 
-            // if (ros::Time::now() - last_pub_time > ros::Duration(1.0)) { //placeholder condition to test
-            bnerf_msgs::GraphIterationStatus status_msg; // to be changed
-            ROS_ERROR("Condition met, running optimizer...");
-
-            gtsam::LevenbergMarquardtParams params;
-            params.setVerbosityLM("SUMMARY");
-            // status_msg.iteration = iteration_count++; // we want to increment to publish
-
-            status_msg.graph_stamps.reserve(100); // reserve space if expecting many iterations (was getting an error)
-            status_msg.graph_states.reserve(100);
-
-            try
-            {
-                auto start_time = std::chrono::high_resolution_clock::now(); // start time capture
-
-                gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial, params);
-                gtsam::Values result = optimizer.optimize();
-
-                auto end_time = std::chrono::high_resolution_clock::now(); // end time capture
-                auto exec_time = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-
-                status_msg.exec_time = ros::Duration(exec_time.count() / 1000000.0); // convert to seconds
-                status_msg.iteration = iteration_count++;
-
-                // Populate graph states
-                for (const auto &key_value : initial)
-                {
-                    gtsam::Symbol key(key_value.key);
-                    gtsam::Pose3 pose = initial.at<gtsam::Pose3>(key);
-
-                    geometry_msgs::Pose pose_msg;
-                    pose_msg.position.x = pose.x();
-                    pose_msg.position.y = pose.y();
-                    pose_msg.position.z = pose.z();
-                    auto quat = pose.rotation().toQuaternion();
-                    pose_msg.orientation.x = quat.x();
-                    pose_msg.orientation.y = quat.y();
-                    pose_msg.orientation.z = quat.z();
-                    pose_msg.orientation.w = quat.w();
-                    status_msg.graph_states.push_back(pose_msg);
-                }
-
-                status_pub.publish(status_msg); // publish the status message
-                ROS_ERROR("Optimizer has run. Final results below:");
-                result.print("Final results\n");
-
-                initial = result;                 // Uudate initial estimates with optimized values
-                last_pub_time = ros::Time::now(); // update last publication time
-                updatesSinceLastOptimization = 0;
-            }
-            catch (const std::exception &e)
-            {
-                ROS_ERROR("Exception during optimization: %s", e.what());
-            }
-        }
-
-        rate.sleep();
-    }
     return 0;
 }
