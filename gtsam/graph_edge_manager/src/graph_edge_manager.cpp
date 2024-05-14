@@ -26,7 +26,8 @@ namespace bnerf
         tf2_ros::TransformListener lis(buf);
 
         auto msg = buf.lookupTransform(map_frame_, reg_frame_, ros::Time(0), ros::Duration(20));
-        trans_ = convert<SE3d>(msg.transform);
+        map_to_reg_ = convert<SE3d>(msg.transform);
+        map_from_reg_ = map_to_reg_.inverse();
 
         double rate;
         GET_REQUIRED(nh, "update_rate", rate);
@@ -83,15 +84,12 @@ namespace bnerf
     void GraphEdgeManager::BinaryEdgeCallBack(
         const bnerf_msgs::GraphBinaryEdge::ConstPtr &msg)
     {
-        const SE3d ref_src = trans_;
-        const SE3d ref_tgt = trans_;
-
-        const SE3d tgt_src = convert<SE3d>(msg->mean);
-        const SE3d trans = ref_tgt * tgt_src * ref_src.inverse();
+        SE3d odom = convert<SE3d>(msg->mean);
+        odom = map_from_reg_ * odom * map_to_reg_;
 
         bnerf_msgs::GraphBinaryEdge::Ptr egde_msg;
         egde_msg.reset(new bnerf_msgs::GraphBinaryEdge);
-        convert(trans, egde_msg->mean);
+        convert(odom, egde_msg->mean);
         egde_msg->start_stamp = msg->start_stamp;
         egde_msg->end_stamp = msg->end_stamp;
 

@@ -17,8 +17,8 @@ namespace bnerf
         tf2_ros::Buffer buf;
         tf2_ros::TransformListener lis(buf);
         
-        auto msg = buf.lookupTransform("imu_link", "velo_link", ros::Time(0), ros::Duration(20));
-        velo_to_imu_ = convert<SE3d>(msg.transform).inverse();
+        auto msg = buf.lookupTransform("velo_link", "imu_link", ros::Time(0), ros::Duration(20));
+        velo_to_imu_ = convert<SE3d>(msg.transform);
 
         stat_sub_ = nh.subscribe("graph_status", 16, &GraphVisualizer::GraphStatusCallBack, this);
         scan_sub_ = nh.subscribe("input_scan", 16, &GraphVisualizer::ScanCallBack, this);

@@ -38,7 +38,8 @@ namespace bnerf
 
         string map_frame_; //the reference frame we run gtsam on, i,e., the gps/imu frame
         string reg_frame_; //the lidar frame
-        SE3d trans_; //transformation to the reference frame
+        SE3d map_to_reg_; //transformation to the reference frame
+        SE3d map_from_reg_;
     };
 }
 
