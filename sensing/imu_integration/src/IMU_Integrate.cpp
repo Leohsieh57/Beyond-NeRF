@@ -131,12 +131,6 @@ geometry_msgs::Transform integrate_subarray(std::vector<sensor_msgs::Imu> imu_ms
     }
 
     // convert to transformation matrix
-    Vector3 delta_velocity = current_summarized_measurement->deltaVij();
-    geometry_msgs::Vector3 v;
-    v.x = delta_velocity.x();
-    v.y = delta_velocity.y();
-    v.z = delta_velocity.z();
-
     Vector3 delta_position = current_summarized_measurement->deltaPij();
     geometry_msgs::Vector3 p;
     p.x = delta_position.x();
@@ -179,7 +173,7 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         auto t2 = localImus.back().header.stamp;
 
         int resolution = 10;
-        auto dt = (t2 - t1) * double(1 / resolution);
+        auto dt = (t2 - t1) * double(1.0 / resolution);
         stamps = {t1};
         for (int i = 0; i < resolution; i++)
             stamps.push_back(stamps.back() + dt);
@@ -210,7 +204,7 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
             }
         }
 
-        LOG(ERROR) << "subarray: " << subarray.size() << "";
+        // LOG(ERROR) << "subarray size: " << subarray.size() << "";
 
         bnerf_msgs::GraphBinaryEdge edge;
         geometry_msgs::Transform transform;
@@ -227,6 +221,7 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         if (is_valid)
         {
             transform = integrate_subarray(subarray, stamps[i], stamps[i + 1]);
+            edge.mean = transform;
             edge.type = bnerf_msgs::GraphBinaryEdge::IMU;
         }
         else
