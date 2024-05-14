@@ -98,39 +98,62 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
     }
 
     // Process binary edges
-    for (const auto &binary_edge : msg->binary_edges)
+    // Process binary edges
+// Process binary edges
+for (const auto &binary_edge : msg->binary_edges)
+{
+    const bnerf_msgs::GraphUnaryEdge *closest_unary_edge_start = nullptr;
+    const bnerf_msgs::GraphUnaryEdge *closest_unary_edge_end = nullptr;
+    double min_time_diff_start = std::numeric_limits<double>::infinity();
+    double min_time_diff_end = std::numeric_limits<double>::infinity();
+
+    for (const auto &unary_edge : msg->unary_edges)
     {
-        const bnerf_msgs::GraphUnaryEdge *closest_unary_edge = nullptr;
-        double min_time_diff = std::numeric_limits<double>::infinity();
-
-        for (const auto &unary_edge : msg->unary_edges)
+        double time_diff_start = std::abs(binary_edge.start_stamp.toSec() - unary_edge.stamp.toSec());
+        double time_diff_end = std::abs(binary_edge.end_stamp.toSec() - unary_edge.stamp.toSec());
+        
+        if (time_diff_start < min_time_diff_start)
         {
-            double time_diff = std::abs(binary_edge.start_stamp.toSec() - unary_edge.stamp.toSec());
-            if (time_diff < min_time_diff)
-            {
-                min_time_diff = time_diff;
-                closest_unary_edge = &unary_edge;
-            }
+            min_time_diff_start = time_diff_start;
+            closest_unary_edge_start = &unary_edge;
         }
-
-        if (closest_unary_edge)
+        
+        if (time_diff_end < min_time_diff_end)
         {
-            double error = calculateError(binary_edge.mean, closest_unary_edge->mean);
-            totalError += error;
-            count++;
-
-            std::string binary_timestamp = std::to_string(binary_edge.start_stamp.toSec());
-            std::string unary_timestamp = std::to_string(closest_unary_edge->stamp.toSec());
-
-            ros::Time binary_ros_stamp = binary_edge.start_stamp;
-            ros::Time unary_ros_stamp = closest_unary_edge->stamp;
-
-            int key_t1 = ensureKeyExists(binary_timestamp, localInitial, gtsam::Pose3(), binary_ros_stamp);
-            int key_t2 = ensureKeyExists(unary_timestamp, localInitial, gtsam::Pose3(), unary_ros_stamp);
-
-            localGraph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1), gtsam::Symbol('x', key_t2), gtsam::Pose3(), poseNoiseModel));
+            min_time_diff_end = time_diff_end;
+            closest_unary_edge_end = &unary_edge;
         }
     }
+
+    if (closest_unary_edge_start && closest_unary_edge_end)
+    {
+        double error_start = calculateError(binary_edge.mean, closest_unary_edge_start->mean);
+        double error_end = calculateError(binary_edge.mean, closest_unary_edge_end->mean);
+        totalError += (error_start + error_end) / 2; // Average error from start and end
+        count += 2; // Increment for both calculations
+
+        std::string binary_timestamp_start = std::to_string(binary_edge.start_stamp.toSec());
+        std::string unary_timestamp_start = std::to_string(closest_unary_edge_start->stamp.toSec());
+
+        std::string binary_timestamp_end = std::to_string(binary_edge.end_stamp.toSec());
+        std::string unary_timestamp_end = std::to_string(closest_unary_edge_end->stamp.toSec());
+
+        ros::Time binary_ros_stamp_start = binary_edge.start_stamp;
+        ros::Time unary_ros_stamp_start = closest_unary_edge_start->stamp;
+
+        ros::Time binary_ros_stamp_end = binary_edge.end_stamp;
+        ros::Time unary_ros_stamp_end = closest_unary_edge_end->stamp;
+
+        int key_t1_start = ensureKeyExists(binary_timestamp_start, localInitial, gtsam::Pose3(), binary_ros_stamp_start);
+        int key_t2_start = ensureKeyExists(unary_timestamp_start, localInitial, gtsam::Pose3(), unary_ros_stamp_start);
+
+        int key_t1_end = ensureKeyExists(binary_timestamp_end, localInitial, gtsam::Pose3(), binary_ros_stamp_end);
+        int key_t2_end = ensureKeyExists(unary_timestamp_end, localInitial, gtsam::Pose3(), unary_ros_stamp_end);
+
+        localGraph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1_start), gtsam::Symbol('x', key_t2_start), gtsam::Pose3(), poseNoiseModel));
+        localGraph.add(gtsam::BetweenFactor<gtsam::Pose3>(gtsam::Symbol('x', key_t1_end), gtsam::Symbol('x', key_t2_end), gtsam::Pose3(), poseNoiseModel));
+    }
+}
 
     if (!localGraph.empty())
     {
