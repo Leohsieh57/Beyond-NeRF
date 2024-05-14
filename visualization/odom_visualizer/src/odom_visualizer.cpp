@@ -4,11 +4,12 @@
 #include <glog/logging.h>
 #include <bnerf_utils/bnerf_utils.h>
 #include <pcl/common/transforms.h>
+#include <nav_msgs/Path.h>
 
 namespace bnerf
 {
     OdomVisualizer::OdomVisualizer(ros::NodeHandle &nh)
-        : pose_pub_(nh.advertise<geometry_msgs::PoseArray>("trajectory", 128))
+        : pose_pub_(nh.advertise<geometry_msgs::PoseArray>("odometry", 128)), path_pub_(nh.advertise<nav_msgs::Path>("trajectory", 128))
     {
         GET_REQUIRED(nh, "frame_id", frame_id_);
         odom_sub_ = nh.subscribe("input_odom", 16, &OdomVisualizer::OdomCallBack, this);
@@ -40,20 +41,29 @@ namespace bnerf
         if (odoms.empty())
             return;
 
-        geometry_msgs::PoseArray msg;
-        SE3d accum;
-        msg.poses.reserve(1 + odoms.size());
-        convert(accum, msg.poses.emplace_back());
-
+        vector<SE3d> trajs(1);
         for (const auto &odom : odoms)
+            trajs.push_back(trajs.back() * odom);
+
+        nav_msgs::Path traj_msg;
+        traj_msg.header.frame_id = frame_id_;
+        traj_msg.header.stamp = ros::Time::now();
+
+        geometry_msgs::PoseArray odom_msg;
+        odom_msg.header = traj_msg.header;
+
+        for (const auto &traj : trajs)
         {
-            accum *= odom;
-            convert(accum, msg.poses.emplace_back());
+            auto &msg = traj_msg.poses.emplace_back();
+            msg.header = traj_msg.header;
+
+            convert(traj, msg.pose);
+            odom_msg.poses.push_back(msg.pose);
+            traj_msg.poses.emplace_back();
         }
 
-        msg.header.frame_id = frame_id_;
-        msg.header.stamp = ros::Time::now();
-        pose_pub_.publish(msg);
+        pose_pub_.publish(odom_msg);
+        path_pub_.publish(traj_msg);
     }
 
     vector<SE3d> OdomVisualizer::GetOdometries()

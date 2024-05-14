@@ -1,21 +1,8 @@
 #!/usr/bin/env python3
-import os
-import PIL.Image
 import rospy
-import torch
-import torchvision.transforms as tvf
-import numpy as np
 
-
-from message_filters import ApproximateTimeSynchronizer, Subscriber
-from sensor_msgs.point_cloud2 import create_cloud
-from sensor_msgs.msg import PointField, PointCloud2, Image
-from std_msgs.msg import Header
 from geometry_msgs.msg import TransformStamped
 from bnerf_msgs.msg import GraphBinaryEdge
-from cv_bridge import CvBridge
-from bnerf_msgs.msg import DUSt3RInfo
-import PIL
 
 
 class EdgeToOdom:

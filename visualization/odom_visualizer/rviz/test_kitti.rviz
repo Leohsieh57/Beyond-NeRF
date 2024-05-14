@@ -6,9 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /TF1/Frames1
-        - /PoseArray1
         - /PoseArray1/Status1
+        - /Path1/Status1
       Splitter Ratio: 0.5021008253097534
     Tree Height: 1118
   - Class: rviz/Selection
@@ -55,32 +54,45 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Min Color: 0; 0; 0
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Queue Size: 1
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.009999999776482582
-      Style: Points
-      Topic: /velodyne_filter_node/filtered_points
+      Arrow Length: 0.30000001192092896
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz/PoseArray
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.07000000029802322
+      Head Radius: 0.029999999329447746
+      Name: PoseArray
+      Queue Size: 10
+      Shaft Length: 0.23000000417232513
+      Shaft Radius: 0.009999999776482582
+      Shape: Arrow (Flat)
+      Topic: /odom_visualizer_node/odometry
       Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
+      Value: true
+    - Alpha: 0.10000000149011612
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: false
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 1
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /odom_visualizer_node/trajectory
+      Unreliable: false
       Value: false
     - Class: rviz/TF
       Enabled: true
@@ -127,23 +139,6 @@ Visualization Manager:
                 {}
       Update Interval: 0
       Value: true
-    - Alpha: 1
-      Arrow Length: 0.30000001192092896
-      Axes Length: 0.30000001192092896
-      Axes Radius: 0.009999999776482582
-      Class: rviz/PoseArray
-      Color: 255; 25; 0
-      Enabled: true
-      Head Length: 0.07000000029802322
-      Head Radius: 0.029999999329447746
-      Name: PoseArray
-      Queue Size: 10
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.009999999776482582
-      Shape: Arrow (Flat)
-      Topic: /odom_visualizer_node/trajectory
-      Unreliable: false
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -172,7 +167,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 25.33671760559082
+      Distance: 43.606021881103516
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -180,17 +175,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 9.02116584777832
-        Y: 0.7760199904441833
-        Z: 7.235320568084717
+        X: 57.96088409423828
+        Y: -0.923874020576477
+        Z: 18.698646545410156
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.45979738235473633
+      Pitch: 0.2697976231575012
       Target Frame: <Fixed Frame>
-      Yaw: 2.3222463130950928
+      Yaw: 2.622236728668213
     Saved: ~
 Window Geometry:
   Displays:
