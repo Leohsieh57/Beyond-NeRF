@@ -13,11 +13,15 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <glog/logging.h>
 
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Transform.h>
 #include <deque>
+#include <Eigen/Dense>
+#include <boost/array.hpp>
+#include <algorithm>
 
 // #include "bnerf_msgs/msg/imumsg.h"
 #include "bnerf_msgs/IntegrateIMU.h"
@@ -40,6 +44,8 @@ Vector3 toVector3(const geometry_msgs::Vector3 &v)
 // store IMU msgs in time order
 void IMUCallback(const sensor_msgs::Imu::ConstPtr &msg)
 {
+    // ROS_INFO("Received IMU message.");
+    std::cout << "Received IMU message with timestamp: " << msg->header.stamp << std::endl;
     // wait until we are allowed to edit the IMU array
     std::lock_guard<std::mutex> lock(globalImuDequeMutex);
 
@@ -66,7 +72,6 @@ void IMUCallback(const sensor_msgs::Imu::ConstPtr &msg)
 geometry_msgs::Transform integrate_subarray(std::vector<sensor_msgs::Imu> imu_msgs, ros::Time start_time, ros::Time end_time)
 {
     // lock IMU array so it can't be changed until the function is done
-    std::lock_guard<std::mutex> lock(globalImuDequeMutex);
 
     auto current_bias = imuBias::ConstantBias(); // init with zero bias
     double g = 9.8;
@@ -99,7 +104,7 @@ geometry_msgs::Transform integrate_subarray(std::vector<sensor_msgs::Imu> imu_ms
         std::make_shared<PreintegratedImuMeasurements>(imu_params,
                                                        current_bias);
 
-    //integration loop
+    // integration loop
     double dt;
     for (int i = 0; i < imu_msgs.size(); ++i)
     {
@@ -125,13 +130,7 @@ geometry_msgs::Transform integrate_subarray(std::vector<sensor_msgs::Imu> imu_ms
             dt);
     }
 
-    //convert to transformation matrix
-    Vector3 delta_velocity = current_summarized_measurement->deltaVij();
-    geometry_msgs::Vector3 v;
-    v.x = delta_velocity.x();
-    v.y = delta_velocity.y();
-    v.z = delta_velocity.z();
-
+    // convert to transformation matrix
     Vector3 delta_position = current_summarized_measurement->deltaPij();
     geometry_msgs::Vector3 p;
     p.x = delta_position.x();
@@ -155,9 +154,37 @@ geometry_msgs::Transform integrate_subarray(std::vector<sensor_msgs::Imu> imu_ms
 
 bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU::Response &res)
 {
+    std::vector<sensor_msgs::Imu> localImus;
+    {
+        std::lock_guard<std::mutex> lock(globalImuDequeMutex);
+        localImus.assign(globalImuDeque.begin(), globalImuDeque.end());
+    }
+
+    if (localImus.size() < 20)
+    {
+        LOG(ERROR) << "imu size (" << localImus.size() << ") too low, skipping.. ";
+        return false;
+    }
+
     std::vector<ros::Time> stamps = req.stamps;
-    std::vector<geometry_msgs::Transform> all_transforms;
-    std::vector<bool> validities;
+    if (stamps.empty())
+    {
+        auto t1 = localImus.front().header.stamp;
+        auto t2 = localImus.back().header.stamp;
+
+        int resolution = 10;
+        auto dt = (t2 - t1) * double(1.0 / resolution);
+        stamps = {t1};
+        for (int i = 0; i < resolution; i++)
+            stamps.push_back(stamps.back() + dt);
+    }
+
+    // ROS_INFO("STAMPS:");
+
+    // for (const auto &stamp : stamps)
+    // {
+    //     std::cout << stamp << std::endl;
+    // }
 
     // make our subarrays between each 2 consecutive timestamps
     for (size_t i = 0; i < stamps.size() - 1; ++i)
@@ -165,7 +192,7 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
         std::vector<sensor_msgs::Imu> subarray;
 
         // Find all the messages between the two timestamps
-        for (const auto &imu_msg : globalImuDeque)
+        for (const auto &imu_msg : localImus)
         {
             if (imu_msg.header.stamp >= stamps[i] && imu_msg.header.stamp < stamps[i + 1])
             {
@@ -177,30 +204,48 @@ bool integrate(bnerf_msgs::IntegrateIMU::Request &req, bnerf_msgs::IntegrateIMU:
             }
         }
 
-        bool is_valid = !subarray.empty();
-        validities.push_back(is_valid);
+        // LOG(ERROR) << "subarray size: " << subarray.size() << "";
 
+        bnerf_msgs::GraphBinaryEdge edge;
         geometry_msgs::Transform transform;
+
+        Eigen::Matrix<double, 6, 6> cov_input = Eigen::Matrix<double, 6, 6>::Identity();
+        boost::array<double, 36> cov_output;
+        copy_n(cov_input.data(), 36, cov_output.data());
+
+        edge.start_stamp = stamps[i];
+        edge.end_stamp = stamps[i + 1];
+        edge.covariance = cov_output;
+
+        bool is_valid = !subarray.empty();
         if (is_valid)
         {
             transform = integrate_subarray(subarray, stamps[i], stamps[i + 1]);
+            edge.mean = transform;
+            edge.type = bnerf_msgs::GraphBinaryEdge::IMU;
         }
-        all_transforms.push_back(transform);
+        else
+        {
+            edge.type = bnerf_msgs::GraphBinaryEdge::INVALID;
+        }
+        res.edges.push_back(edge);
     }
 
-    //res.transforms = all_transforms;
     return true;
 }
 
 int main(int argc, char **argv)
 {
+    FLAGS_colorlogtostderr = true;
+    google::InstallFailureSignalHandler();
+
     ros::init(argc, argv, "imu_listener_node");
     ros::NodeHandle nh;
 
     // TODO: Replace "/imu_topic" with the actual name of the topic
-    ros::Subscriber sub = nh.subscribe("topic_name", 1000, IMUCallback);
+    ros::Subscriber sub = nh.subscribe("/kitti/oxts/imu", 1000, IMUCallback);
 
-    ros::ServiceServer service = nh.advertiseService("topic_name", integrate);
+    ros::ServiceServer service = nh.advertiseService("integrate_imu", integrate);
 
     ros::spin();
 
