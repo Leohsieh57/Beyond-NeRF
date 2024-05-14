@@ -20,6 +20,7 @@ namespace bnerf
         GET_REQUIRED(nh, "cov_x", cov_x);
         GET_REQUIRED(nh, "cov_y", cov_y);
         GET_REQUIRED(nh, "cov_z", cov_z);
+        GET_REQUIRED(nh, "map_frame", map_frame_);
 
         gps_cov_.setZero();
         gps_cov_.diagonal() << cov_x, cov_y, cov_z;
@@ -30,7 +31,34 @@ namespace bnerf
 
     void PriorFactorManager::SyncCallBack(const Imu::ConstPtr &imu, const Gps::ConstPtr &gps)
     {
-        LOG(INFO) << imu->header.stamp - gps->header.stamp;
+        geographic_msgs::GeoPoint utm_msg;
+        utm_msg.latitude = gps->latitude;
+        utm_msg.longitude = gps->longitude;
+        utm_msg.altitude = gps->altitude;
+        
+        geodesy::UTMPoint utm;
+        geodesy::fromMsg(utm_msg, utm);
+
+        Vec3d xyz;
+        xyz << utm.easting, utm.northing, utm.altitude;
+        {
+            lock_guard<mutex> lock(utm_bias_mutex_);
+            if (!utm_bias_set_)
+            {
+                utm_bias_set_ = true;
+                utm_bias_ = xyz;
+            }
+        }
+
+        xyz -= utm_bias_;
+
+        geometry_msgs::TransformStamped msg;
+        msg.header = imu->header;
+        msg.child_frame_id = map_frame_;
+        msg.child_frame_id.swap(msg.header.frame_id);
+        msg.transform.rotation = imu->orientation;
+        convert(xyz, msg.transform.translation);
+        caster_.sendTransform(msg);
     }
 
 

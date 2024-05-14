@@ -32,6 +32,7 @@ namespace bnerf
         Vec3d utm_bias_;
         mutex utm_bias_mutex_;
         Mat33d gps_cov_;
+        string map_frame_;
 
         ros::Publisher factor_pub_;
         tf2_ros::TransformBroadcaster caster_;
