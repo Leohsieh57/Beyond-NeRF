@@ -5,7 +5,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <bnerf_utils/typedef.h>
-#include <bnerf_utils/ros/publisher.hpp>
 #include <bnerf_msgs/GraphIterationStatus.h>
 #include <tf2_ros/transform_listener.h>
 
@@ -18,12 +17,15 @@ namespace bnerf
         GraphVisualizer(ros::NodeHandle &);
         
         private:
-        void ScanCallBack(const sensor_msgs::PointCloud2 &);
+        void GraphStatusCallBack(const bnerf_msgs::GraphIterationStatus &);
+        void ScanCallBack(const sensor_msgs::PointCloud2::ConstPtr &);
 
+        ros::Subscriber stat_sub_;
         ros::Subscriber scan_sub_;
-        Publisher<bnerf_msgs::GraphIterationStatus> pub_;
-        tf2_ros::Buffer buffer_;
-        tf2_ros::TransformListener tf_lis_;
+        ros::Publisher scan_pub_;
+
+        mutex scan_mutex_;
+        map<ros::Time, sensor_msgs::PointCloud2::ConstPtr> scan_msgs_;
     };
 }
 

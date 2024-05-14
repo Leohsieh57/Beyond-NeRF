@@ -325,10 +325,10 @@ def run_kitti2bag(kitti_dir, date, drive, output, kitti_type:str, sequence=None)
             # Export
             save_velo_data(bag, kitti, velo_frame_id, velo_topic, is_sync=kitti_type.endswith("sync"))
             save_static_transforms(bag, transforms, kitti.timestamps)
-            # save_dynamic_tf(bag, kitti, kitti_type, initial_time=None)
+            save_dynamic_tf(bag, kitti, kitti_type, initial_time=None)
             save_imu_data(bag, kitti, imu_frame_id, imu_topic)
             save_gps_fix_data(bag, kitti, imu_frame_id, gps_fix_topic)
-            # save_gps_vel_data(bag, kitti, imu_frame_id, gps_vel_topic)
+            save_gps_vel_data(bag, kitti, imu_frame_id, gps_vel_topic)
             for camera in cameras:
                 if "color" in camera[-1]:
                     save_camera_data(bag, kitti_type, kitti, util, bridge, camera=camera[0], camera_frame_id=camera[1], topic=camera[2], initial_time=None)
