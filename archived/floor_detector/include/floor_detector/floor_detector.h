@@ -5,6 +5,8 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <bnerf_utils/bnerf_utils.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
 
 
 namespace bnerf

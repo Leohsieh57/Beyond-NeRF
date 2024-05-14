@@ -7,7 +7,7 @@
         <remap from="~/raw_scan" to="/kitti/velo/pointcloud"/>
     </node>
     
-    <arg name="solver" default="gicp"/>
+    <arg name="solver" default="ndt"/>
     <arg name="visualize" default="false"/>
     <arg name="verbose" default="false"/>
     <arg name="is_ndt" value="$(eval arg('solver') == 'ndt')"/>

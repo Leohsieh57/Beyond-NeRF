@@ -5,6 +5,7 @@
 #include <voxelizer/voxelizer.h>
 #include <scan_matcher/optimizer.h>
 #include <bnerf_utils/bnerf_utils.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace bnerf
 {
@@ -17,12 +18,16 @@ namespace bnerf
 
         private:
         Voxelizer::ConstPtr GetVoxelizer(sensor_msgs::PointCloud2::ConstPtr);
+        SE3d GetInitGuess(const std_msgs::Header &src_h, const ros::Time & tgt_t);
 
         //registrator stuffs
         private:
         ros::NodeHandle nh_;
         mutex vox_mutex_;
         vector<Voxelizer::ConstPtr> vox_win_;
+
+        tf2_ros::Buffer tf_buf_;
+        tf2_ros::TransformListener tf_lis_;
 
         //parameter & node handle stuffs
         private:
