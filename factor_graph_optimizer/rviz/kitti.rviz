@@ -71,6 +71,8 @@ Visualization Manager:
           Value: true
         imu_link:
           Value: true
+        map:
+          Value: true
         velo_link:
           Value: true
         world:
@@ -92,6 +94,8 @@ Visualization Manager:
               camera_gray_left:
                 {}
               camera_gray_right:
+                {}
+              map:
                 {}
               velo_link:
                 {}
@@ -194,7 +198,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 319.30316162109375
+      Distance: 269.0306701660156
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -202,17 +206,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -19.71462631225586
-        Y: -7.585563659667969
-        Z: -135.01161193847656
+        X: -4.310484886169434
+        Y: -10.523027420043945
+        Z: -135.38819885253906
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.169796347618103
+      Pitch: 1.329796314239502
       Target Frame: base_link
-      Yaw: 1.2303905487060547
+      Yaw: 0.875390887260437
     Saved: ~
 Window Geometry:
   Displays:

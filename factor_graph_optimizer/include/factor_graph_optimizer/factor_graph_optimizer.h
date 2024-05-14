@@ -7,7 +7,9 @@
 #include <bnerf_msgs/GraphUnaryEdge.h>
 #include <bnerf_msgs/GraphBinaryEdge.h>
 #include <bnerf_msgs/GraphIterationStatus.h>
+#include <tf2_ros/transform_broadcaster.h>
 #include <sensor_msgs/Imu.h>
+#include <gtsam/nonlinear/Values.h>
 
 namespace bnerf
 {
@@ -21,10 +23,12 @@ namespace bnerf
         void BinaryEdgeCallBack(const bnerf_msgs::GraphBinaryEdge::ConstPtr &);
         void ImuCallBack(const sensor_msgs::Imu::ConstPtr &);
         void OptimizeGraph(const ros::TimerEvent &);
+        void PublishResults(const gtsam::Values &, const vector<ros::Time> &);
 
         static size_t GetKey(const ros::Time &, vector<ros::Time> &, map<ros::Time, size_t> &);
 
         ros::Publisher stat_pub_;
+        tf2_ros::TransformBroadcaster caster_;
 
         ros::Duration win_span_;
         ros::Subscriber gps_sub_;

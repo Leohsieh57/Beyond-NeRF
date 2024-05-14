@@ -4,7 +4,6 @@
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
-#include <gtsam/nonlinear/Values.h>
 #include <gtsam/inference/Symbol.h>
 #include <gtsam/slam/BetweenFactor.h>
 #include <gtsam/navigation/GPSFactor.h>
@@ -22,9 +21,6 @@ namespace bnerf
         double win_span;
         GET_REQUIRED(nh, "window_span", win_span);
         win_span_.fromSec(win_span);
-
-        // cli_ = nh.serviceClient<bnerf_msgs::IntegrateIMU>("integrate_imu");
-        // LOG_ASSERT(cli_.waitForExistence(ros::Duration(5)));
 
         tf2_ros::Buffer buf;
         tf2_ros::TransformListener lis(buf);
@@ -59,6 +55,45 @@ namespace bnerf
     }
 
 
+    void FactorGraphOptimizer::PublishResults(const gtsam::Values & result, 
+        const vector<ros::Time> & key_to_stamp)
+    {
+        bnerf_msgs::GraphIterationStatus status_msg;
+        status_msg.graph_stamps.reserve(result.size());
+        status_msg.graph_states.reserve(result.size());
+
+        // Populate graph states for publishing
+        for (const auto &key_value : result)
+        {
+            gtsam::Symbol key(key_value.key);
+            gtsam::Pose3 pose = result.at<gtsam::Pose3>(key);
+
+            geometry_msgs::Pose pose_msg;
+            pose_msg.position.x = pose.x();
+            pose_msg.position.y = pose.y();
+            pose_msg.position.z = pose.z();
+            auto quat = pose.rotation().toQuaternion();
+            pose_msg.orientation.x = quat.x();
+            pose_msg.orientation.y = quat.y();
+            pose_msg.orientation.z = quat.z();
+            pose_msg.orientation.w = quat.w();
+
+            status_msg.graph_states.push_back(pose_msg);
+            status_msg.graph_stamps.push_back(key_to_stamp[key]);
+        }
+
+        stat_pub_.publish(status_msg);
+
+        geometry_msgs::TransformStamped msg;
+        convert(convert<SE3d>(status_msg.graph_states.back()), msg.transform);
+        msg.header.stamp = status_msg.graph_stamps.back();
+        msg.header.frame_id = map_frame_;
+        msg.child_frame_id = "map";
+
+        caster_.sendTransform(msg);
+    }
+
+
     void FactorGraphOptimizer::OptimizeGraph(const ros::TimerEvent &)
     {
         vector<bnerf_msgs::GraphUnaryEdge::ConstPtr> gps_msgs;
@@ -85,6 +120,7 @@ namespace bnerf
 
         gtsam::NonlinearFactorGraph graph;
         gtsam::Values init_guess;
+
         auto noise = gtsam::noiseModel::Diagonal::Variances(Vec6d::Ones());
         for (const auto & reg : reg_msgs)
         {
@@ -142,39 +178,15 @@ namespace bnerf
             init_guess.insert(key, estim);
         }
 
+        if (graph.empty())
+            return;
 
         gtsam::LevenbergMarquardtParams params;
         params.setVerbosityLM("SUMMARY");
 
         gtsam::LevenbergMarquardtOptimizer optimizer(graph, init_guess, params);
         auto result = optimizer.optimize();
-
-        bnerf_msgs::GraphIterationStatus status_msg;
-
-        status_msg.graph_stamps.reserve(result.size());
-        status_msg.graph_states.reserve(result.size());
-
-        // Populate graph states for publishing
-        for (const auto &key_value : result)
-        {
-            gtsam::Symbol key(key_value.key);
-            gtsam::Pose3 pose = result.at<gtsam::Pose3>(key);
-
-            geometry_msgs::Pose pose_msg;
-            pose_msg.position.x = pose.x();
-            pose_msg.position.y = pose.y();
-            pose_msg.position.z = pose.z();
-            auto quat = pose.rotation().toQuaternion();
-            pose_msg.orientation.x = quat.x();
-            pose_msg.orientation.y = quat.y();
-            pose_msg.orientation.z = quat.z();
-            pose_msg.orientation.w = quat.w();
-
-            status_msg.graph_states.push_back(pose_msg);
-            status_msg.graph_stamps.push_back(key_to_stamp[key]);
-        }
-
-        stat_pub_.publish(status_msg);
+        PublishResults(result, key_to_stamp);
     }
 
 
