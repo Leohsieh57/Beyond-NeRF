@@ -138,6 +138,7 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
 
         // Publish the results
         bnerf_msgs::GraphIterationStatus status_msg;
+        
         status_msg.graph_stamps.reserve(100);
         status_msg.graph_states.reserve(100);
 
@@ -156,6 +157,9 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
             pose_msg.orientation.y = quat.y();
             pose_msg.orientation.z = quat.z();
             pose_msg.orientation.w = quat.w();
+
+            ros::Time stamp(static_cast<double>(key.index()));
+            status_msg.graph_stamps.push_back(stamp);
             status_msg.graph_states.push_back(pose_msg);
         }
 
