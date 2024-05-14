@@ -9,6 +9,7 @@
     
     <arg name="solver" default="gicp"/>
     <arg name="visualize" default="false"/>
+    <arg name="verbose" default="false"/>
     <arg name="is_ndt" value="$(eval arg('solver') == 'ndt')"/>
 
     <arg if="$(eval arg('solver') == 'ndt')" name="target_topic" value="/kitti/velo/pointcloud" />
@@ -17,11 +18,10 @@
     <node pkg="scan_matcher" type="scan_matcher_node" name="scan_matcher_node" output="screen">
         <rosparam file="$(find scan_matcher)/cfg/$(arg solver).yaml" />
         <param name="visualize" type="bool" value="$(arg visualize)" />
-        <param name="verbose" type="bool" value="false" />
+        <param name="verbose" type="bool" value="$(arg verbose)" />
         
         <param name="solver" type="string" value="$(arg solver)" />
         <remap from="~/target_scan" to="$(arg target_topic)"/>
         <remap from="~/source_scan" to="/voxel_grid_filter_node/filtered_points"/>
     </node>
-	<node if="$(eval arg('visualize'))" pkg="rviz" type="rviz" name="rviz" args="-d $(find scan_matcher)/rviz/kitti.rviz" />
 </launch>

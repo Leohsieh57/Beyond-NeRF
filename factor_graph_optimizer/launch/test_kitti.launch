@@ -1,7 +1,8 @@
 <launch>
     <!-- <include file="$(find kitti2bag)/launch/replay.launch"/> -->
     <include file="$(find scan_matcher)/launch/test_kitti.launch">
-        <arg name="visualize" value="false" />
+        <arg name="visualize" value="true" />
+        <arg name="verbose" value="true" />
     </include>
 
     <node pkg="navsat_bias" type="navsat_bias_node" name="navsat_bias_node" output="screen">
