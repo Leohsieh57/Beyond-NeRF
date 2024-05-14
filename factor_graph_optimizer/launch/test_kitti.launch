@@ -28,5 +28,6 @@
         <remap from="~/graph_status" to="/factor_graph_optimizer_node/graph_status"/>
     </node>
 
+
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find factor_graph_optimizer)/rviz/kitti.rviz" />
 </launch>
