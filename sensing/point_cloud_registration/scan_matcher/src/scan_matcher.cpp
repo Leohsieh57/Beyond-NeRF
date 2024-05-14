@@ -12,8 +12,7 @@ namespace bnerf
 {
     ScanMatcher::ScanMatcher()
         : nh_("~")
-        , tf_buf_()
-        , tf_lis_(tf_buf_)
+        , tf_finder_(nh_)
     {
         GET_REQUIRED(nh_, "max_iters", max_iters_);
         GET_OPTIONAL(nh_, "verbose", verbose_, false);
@@ -45,27 +44,6 @@ namespace bnerf
     }
 
 
-    SE3d ScanMatcher::GetInitGuess(const std_msgs::Header &src_h, const ros::Time & tgt_t)
-    {   
-        const ros::Duration dt(0.003);
-        geometry_msgs::TransformStamped map_to_src_msg, map_to_tgt_msg;
-        try 
-        {
-            map_to_src_msg = tf_buf_.lookupTransform("map", src_h.frame_id , src_h.stamp, dt);
-            map_to_tgt_msg = tf_buf_.lookupTransform("map", src_h.frame_id , tgt_t, dt);
-        } 
-        catch (tf2::TransformException & ex) 
-        {
-            LOG(ERROR) << ex.what();
-            return SE3d();
-        }
-        
-        SE3d map_to_src = convert<SE3d>(map_to_src_msg.transform);
-        SE3d map_to_tgt = convert<SE3d>(map_to_tgt_msg.transform);
-        return map_to_tgt * map_to_src.inverse();
-    }
-
-
     void ScanMatcher::SourceScanCallBack(const sensor_msgs::PointCloud2::ConstPtr & source)
     {
         const auto t1 = ros::Time::now();
@@ -76,12 +54,12 @@ namespace bnerf
         if (verbose_)
             LOG(WARNING) << "start optim. scan size: " << source->width;
 
-        SE3d init_guess = GetInitGuess(source->header, voxer->GetStamp());
-        //SE3d init_guess;
+        SE3d src_to_map = tf_finder_.InterpolateTransform(source->header.stamp);
+        SE3d tgt_to_map = tf_finder_.InterpolateTransform(voxer->GetStamp());
+
+        SE3d init_guess = tgt_to_map.inverse() * src_to_map;
         Optimizer optim(voxer, source);
         optim.SetEstimation(init_guess);
-
-        double last_loss = optim.loss_;
 
         bnerf_msgs::ScanMatchingInfo info_msg;
         while (ros::ok() && info_msg.num_iterations++ < uint(max_iters_))
@@ -101,10 +79,6 @@ namespace bnerf
 
             SE3d eps = SE3d::exp(inc);
             optim.SetEstimation(eps * optim.trans_);
-            if (optim.loss_ >= last_loss)
-                break;
-            else
-                last_loss = optim.loss_;
         }
 
         const auto t2 = ros::Time::now();

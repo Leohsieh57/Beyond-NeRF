@@ -6,10 +6,20 @@
         <param name="use_approx" type="bool" value="false" />
         <remap from="~/raw_scan" to="/kitti/velo/pointcloud"/>
     </node>
+
+    <arg name="fix_frame" default="gps_reference"/>
+    <node pkg="prior_factor_manager" type="prior_factor_manager_node" name="prior_factor_manager_node" output="screen">
+        <param name="cov_x" type="double" value="1.0" />
+        <param name="cov_y" type="double" value="1.0" />
+        <param name="cov_z" type="double" value="100.0" />
+        <param name="fix_frame" value="$(arg fix_frame)" />
+        <remap from="~/gps" to="/kitti/oxts/gps/fix"/>
+        <remap from="~/imu" to="/kitti/oxts/imu"/>
+    </node>
     
     <arg name="solver" default="ndt"/>
-    <arg name="visualize" default="false"/>
-    <arg name="verbose" default="false"/>
+    <arg name="visualize" default="true"/>
+    <arg name="verbose" default="true"/>
     <arg name="is_ndt" value="$(eval arg('solver') == 'ndt')"/>
 
     <arg if="$(eval arg('solver') == 'ndt')" name="target_topic" value="/kitti/velo/pointcloud" />
@@ -19,9 +29,12 @@
         <rosparam file="$(find scan_matcher)/cfg/$(arg solver).yaml" />
         <param name="visualize" type="bool" value="$(arg visualize)" />
         <param name="verbose" type="bool" value="$(arg verbose)" />
+        <param name="fix_frame" value="$(arg fix_frame)" />
+        <param name="dynamic_frame" value="velo_link" />
         
         <param name="solver" type="string" value="$(arg solver)" />
         <remap from="~/target_scan" to="$(arg target_topic)"/>
         <remap from="~/source_scan" to="/voxel_grid_filter_node/filtered_points"/>
     </node>
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find scan_matcher)/rviz/kitti.rviz" />
 </launch>

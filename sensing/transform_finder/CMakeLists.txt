@@ -1,14 +1,13 @@
 cmake_minimum_required(VERSION 3.8)
 
-project(scan_matcher)
+project(transform_finder)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
-    voxelizer
-    transform_finder
+    bnerf_utils
 )
 
 include_directories(
@@ -41,9 +40,5 @@ catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
-    voxelizer
-    transform_finder
+    bnerf_utils
 )
-
-add_executable(${PROJECT_NAME}_node main.cpp)
-target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME})

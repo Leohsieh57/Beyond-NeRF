@@ -109,6 +109,55 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
+    - Class: rviz/TF
+      Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        base_link:
+          Value: true
+        camera_color_left:
+          Value: true
+        camera_color_right:
+          Value: true
+        camera_gray_left:
+          Value: true
+        camera_gray_right:
+          Value: true
+        gps_reference:
+          Value: true
+        imu_link:
+          Value: true
+        velo_link:
+          Value: true
+        world:
+          Value: true
+      Marker Alpha: 1
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          base_link:
+            imu_link:
+              camera_color_left:
+                {}
+              camera_color_right:
+                {}
+              camera_gray_left:
+                {}
+              camera_gray_right:
+                {}
+              gps_reference:
+                {}
+              velo_link:
+                {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -137,7 +186,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 96.20512390136719
+      Distance: 67.9684829711914
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -145,17 +194,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 6.073923110961914
-        Y: 5.098409175872803
-        Z: 0.34176671504974365
-      Focal Shape Fixed Size: true
+        X: 2.8247509002685547
+        Y: -1.272242546081543
+        Z: 1.4191806316375732
+      Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
       Pitch: 1.5697963237762451
       Target Frame: base_link
-      Yaw: 4.9397053718566895
+      Yaw: 4.925404071807861
     Saved: ~
 Window Geometry:
   Displays:

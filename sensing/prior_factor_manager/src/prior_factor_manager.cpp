@@ -14,13 +14,12 @@ namespace bnerf
         , gps_sub_(nh, "gps", 1024)
         , sync_sub_(imu_sub_, gps_sub_, 1024)
         , utm_bias_set_(false)
-        , factor_pub_(nh.advertise<bnerf_msgs::GraphPriorFactor>("prior_factor", 1024))
     {
         double cov_x, cov_y, cov_z;
         GET_REQUIRED(nh, "cov_x", cov_x);
         GET_REQUIRED(nh, "cov_y", cov_y);
         GET_REQUIRED(nh, "cov_z", cov_z);
-        GET_REQUIRED(nh, "map_frame", map_frame_);
+        GET_REQUIRED(nh, "fix_frame", fix_frame_);
 
         gps_cov_.setZero();
         gps_cov_.diagonal() << cov_x, cov_y, cov_z;
@@ -54,10 +53,12 @@ namespace bnerf
 
         geometry_msgs::TransformStamped msg;
         msg.header = imu->header;
-        msg.child_frame_id = map_frame_;
-        msg.child_frame_id.swap(msg.header.frame_id);
+        msg.child_frame_id = fix_frame_;
         msg.transform.rotation = imu->orientation;
         convert(xyz, msg.transform.translation);
+        
+        SE3d trans = convert<SE3d>(msg.transform);
+        convert(trans.inverse(), msg.transform);
         caster_.sendTransform(msg);
     }
 
