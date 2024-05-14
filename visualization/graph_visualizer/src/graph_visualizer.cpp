@@ -69,5 +69,7 @@ namespace bnerf
         const auto &t = msg->header.stamp;
         lock_guard<mutex> lock(scan_mutex_);
         scan_msgs_.emplace_hint(scan_msgs_.end(), t, msg);
+        while (scan_msgs_.size() > 5000)
+            scan_msgs_.erase(scan_msgs_.begin());
     }
 }

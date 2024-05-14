@@ -102,7 +102,7 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
 
         for (const auto &unary_edge : msg->unary_edges)
         {
-            double time_diff = std::abs(binary_edge.target_stamp.toSec() - unary_edge.stamp.toSec());
+            double time_diff = std::abs(binary_edge.start_stamp.toSec() - unary_edge.stamp.toSec());
             if (time_diff < min_time_diff)
             {
                 min_time_diff = time_diff;
@@ -116,7 +116,7 @@ void EdgeCallBack(const bnerf_msgs::GraphEdgeCollection::ConstPtr &msg)
             totalError += error;
             count++;
 
-            std::string binary_timestamp = std::to_string(binary_edge.target_stamp.toSec());
+            std::string binary_timestamp = std::to_string(binary_edge.start_stamp.toSec());
             std::string unary_timestamp = std::to_string(closest_unary_edge->stamp.toSec());
 
             int key_t1 = ensureKeyExists(binary_timestamp, localInitial, gtsam::Pose3());

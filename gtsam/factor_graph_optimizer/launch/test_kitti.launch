@@ -19,10 +19,14 @@
 
         <remap from="~/binary_edge" to="/scan_matcher_node/registration_binary_edge"/>
         <remap from="~/unary_edge" to="/navsat_bias_node/gps_unary_edge"/>
-        
     </node>
 
-    <node pkg="factor_graph_optimizer" type="factor_graph_optimizer_node" name="factor_graph_optimizer_node" output="screen">
+    <node pkg="factor_graph_optimizer" type="factor_graph_optimizer_node" name="factor_graph_optimizer_node" output="log">
+    </node>
+
+    <node pkg="graph_visualizer" type="graph_visualizer_node" name="graph_visualizer_node" output="screen">
+        <remap from="~/input_scan" to="/voxel_grid_filter_node/filtered_points"/>
+        <remap from="~/graph_status" to="/graph_status"/>
     </node>
 
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find factor_graph_optimizer)/rviz/kitti.rviz" />
